@@ -1,0 +1,38 @@
+All scripts go under the "scripts" directory in the bot's working directory.
+
+Currently, it'll try to load anything under that directory. Don't put 
+stuff that isn't Lua scripting in there or badness will happen.
+
+Command functions are defined in the MeepBot.Commands table, like so:
+
+MeepBot.Commands["foo"] = function( type, caller, params )
+	MeepBot.Say( "foo" )
+end
+
+"type" is the type of incoming message (TYPE_MESSAGE, TYPE_PM, or TYPE_MOD_CHAT)
+"caller" is a string with the username who called the command.
+"params" is the argument string given after the command, or nil if blank.
+
+Simple example to clarify the above:
+
+[Fire_Adept] !say Die.	--> caller = "Fire_Adept", params = "Die."
+[Fire_Adept] !fling	--> caller = "Fire_Adept", params = nil
+
+----
+
+Available MeepBot commands in Lua:
+
+MeepBot.Say( msg )	- self explanatory.
+
+MeepBot.Emote( msg )	- self explanatory.
+
+MeepBot.PM( user, msg )	- self explanatory.
+
+MeepBot.Rand( bound )	- gets a random number from MeepBot's PRNG in
+	the range of 0 .. bound. If bound is not given, returns a random
+	(unsigned) 32-bit number.
+
+MeepBot.Resolve( caller, pattern )	- attempts to resolve a given name
+	pattern using MeepBot's internal user list. If the pattern is "me",
+	returns "caller"; otherwise, the closest unique match is returned,
+	or "pattern" if no match is found.
