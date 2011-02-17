@@ -17,6 +17,8 @@ void clean_exit( int signum )
 	if( exit_lock > 0 )
 		return;
 
+	printf( "Received signal %d: %s\n", signum, strsignal(signum) );
+
 	/* intentional or accidental? */
 	if( signum == SIGINT )
 	{
@@ -68,7 +70,8 @@ int main()
 		return 1;
 	}
 
-	BOT->Connect( "runevillage.com", 7005 );
+	if( !BOT->Connect("runevillage.com", 7005) )
+		return 1;
 
 	/* nothing personal, but I like not compromising the bot's account.
 	 * feel free to replace these with string constants in your build. */

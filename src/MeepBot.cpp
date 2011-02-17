@@ -101,49 +101,47 @@ bool MeepBot::ReloadLua( std::string &err )
 	return OpenLua( err );
 }
 
-bool MeepBot::Connect( const char *host, unsigned port )
+bool MeepBot::Connect( const char *host, unsigned port, int retries )
 {
-	return m_Socket.OpenHost(host, port);
+	while( retries > 0 )
+	{
+		bool bConnected = m_Socket.OpenHost(host, port);
+
+		if( bConnected )
+			return true;
+
+		retries--;
+		printf( "Retrying in 5 seconds.\n" );
+		sleep( 5 );
+	}
+
+	printf( "Gave up connecting. Better luck next time." );
+	return false;
 }
 
-bool MeepBot::Login( const char *name, const char *pwd, int retries )
+bool MeepBot::Login( const char *name, const char *pwd )
 {
 	ChatPacket req = ChatPacket(USER_JOIN, name, pwd);
 
-	while( retries > 0 )
+	/* send our login message, wait for the response */
+	if( Write(req) > 0 && Read() )
 	{
-		/* send our login message, wait for the response */
-		if( Write(req) > 0 && Read() )
+		int response = ChatPacket(m_sReadBuffer).iCode;
+
+		if( response == ACCESS_GRANTED )
 		{
-			int response = ChatPacket(m_sReadBuffer).iCode;
+			m_bLoggedIn = true;
+			Say( "Greetings, Mortals." );
 
-			if( response == ACCESS_GRANTED )
-			{
-				m_bLoggedIn = true;
-				Say( "Greetings, Mortals." );
+			/* request a list of currently chatting users */
+			Write( ChatPacket(USER_LIST) );
 
-				/* request a list of currently chatting users
-				 * - we'll pick this up in MainLoop. */
-				Write( ChatPacket(USER_LIST) );
-
-				return true;
-			}
-
-			printf( "Denied: code %d\n", response );
+			return true;
 		}
 
-		printf( "Failed to login to server.\n" );
-
-		if( retries >= 0 )
-		{
-			printf( "Retrying in 5 seconds.\n" );
-			sleep( 5 );
-		}
-
-		--retries;
+		printf( "Denied: code %d\n", response );
 	}
 
-	printf( "Gave up connecting. Better luck next time.\n" );
 	return false;
 }
 
