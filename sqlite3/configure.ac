@@ -22,7 +22,7 @@ AC_SYS_LARGEFILE
 # Check for required programs.
 AC_PROG_CC
 AC_PROG_RANLIB
-AC_PROG_LIBTOOL
+#AC_PROG_LIBTOOL
 
 # Check for library functions that SQLite can optionally use.
 AC_CHECK_FUNCS([fdatasync usleep fullfsync localtime_r gmtime_r])

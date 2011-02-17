@@ -3,6 +3,7 @@
 #include <csignal>
 #include <lua5.1/lua.hpp>
 #include "MeepBot.h"
+#include "util/StringUtil.h"
 
 using namespace std;
 
@@ -11,13 +12,12 @@ static MeepBot g_Bot;
 
 static unsigned exit_lock = 0;
 
-/* only handle this one */
 void clean_exit( int signum )
 {
 	if( exit_lock > 0 )
 		return;
 
-	/* intentional or accidental? *
+	/* intentional or accidental? */
 	if( signum == SIGINT )
 	{
 		BOT->Emote( "is pulled into the inky shadows..." );
@@ -26,6 +26,7 @@ void clean_exit( int signum )
 	{
 		string str = StringUtil::Format( "Aaaahh! %s! Every man for himself!", strsignal(signum) );
 		BOT->Say( str.c_str() );
+	}
 
 	BOT->Logout();
 	++exit_lock;
@@ -54,7 +55,7 @@ int main()
 	assert( BOT );
 
 	/* set up our signal handling for cleaner exit */
-	for( unsigned i = 0; signals[i] != 0; ] ++i )
+	for( unsigned i = 0; signals[i] != 0; ++i )
 		signal( signals[i], clean_exit );
 
 	string err;
