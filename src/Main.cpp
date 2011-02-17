@@ -1,6 +1,6 @@
 #include <cstdio>
 #include <cassert>
-#include <signal.h>
+#include <csignal>
 #include <lua5.1/lua.hpp>
 #include "MeepBot.h"
 
@@ -17,7 +17,16 @@ void clean_exit( int signum )
 	if( exit_lock > 0 )
 		return;
 
-	BOT->Emote( "is pulled into the inky shadows..." );
+	/* intentional or accidental? *
+	if( signum == SIGINT )
+	{
+		BOT->Emote( "is pulled into the inky shadows..." );
+	}
+	else
+	{
+		string str = StringUtil::Format( "Aaaahh! %s! Every man for himself!", strsignal(signum) );
+		BOT->Say( str.c_str() );
+
 	BOT->Logout();
 	++exit_lock;
 }
@@ -37,16 +46,16 @@ char* GetFileContents( const char *path )
 	return ret;
 }
 
+/* we exit cleanly on receiving these signals - 0 to signal end. */
+const int signals[] = { SIGABRT, SIGFPE, SIGILL, SIGINT, SIGPIPE, SIGSEGV, SIGTERM, 0 };
+
 int main()
 {
 	assert( BOT );
 
 	/* set up our signal handling for cleaner exit */
-	signal( SIGPIPE, clean_exit );
-	signal( SIGSEGV, clean_exit );
-	signal( SIGINT, clean_exit );
-	signal( SIGTERM, clean_exit );
-	signal( SIGABRT, clean_exit );
+	for( unsigned i = 0; signals[i] != 0; ] ++i )
+		signal( signals[i], clean_exit );
 
 	string err;
 	if( !BOT->OpenLua(err) )
