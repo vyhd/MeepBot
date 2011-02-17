@@ -12,5 +12,5 @@ automake
 cd ..
 
 echo "Configuring and building."
-./configure
+./configure --enable-debug
 make

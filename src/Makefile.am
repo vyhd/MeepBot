@@ -1,7 +1,7 @@
 bin_PROGRAMS = MeepBot
 noinst_PROGRAMS = MeepBot
 
-AM_CXXFLAGS = -O3 -Wall -pedantic -fno-exceptions
+AM_CXXFLAGS = -Wall -Wextra -pedantic-errors
 
 ISAAC = util/ISAAC.cpp util/ISAAC.h util/ISAAC/rand.c util/ISAAC/rand.h
 Model = model/UserList.cpp model/UserList.h
