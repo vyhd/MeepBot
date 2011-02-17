@@ -202,6 +202,13 @@ void MeepBot::HandlePacket( const char *data )
 	case USER_PART:
 		m_UserList.Remove( user );
 		break;
+	case USER_MUTE:
+		if( user == "MeepBot" )
+		{
+			Write( ChatPacket(USER_UNMUTE, BLANK, "MeepBot") );
+			Say( "Muting MeepBot is mean :(" );
+		}
+		break;
 	case ROOM_MESSAGE:
 	case USER_PM:
 		/* ignore commands from ourself */
@@ -250,7 +257,8 @@ void MeepBot::HandlePacket( const char *data )
 			Write( ChatPacket(CLIENT_BACK) );
 		break;
 
-	/* handled, but ignored */
+	/* ignored */
+	case USER_UNMUTE:
 	case MOD_CHAT:
 	case CLIENT_CONFIG:
 	case CLIENT_BACK:

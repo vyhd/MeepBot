@@ -34,16 +34,19 @@ void clean_exit( int signum )
 
 char* GetFileContents( const char *path )
 {
-	FILE *pFile = fopen( path, "rb" );
+	FILE *pFile = fopen( path, "r" );
 
 	if( pFile == NULL )
 		return NULL;
 
 	fseek( pFile, 0, SEEK_END );
 	unsigned len = ftell( pFile );
+	rewind( pFile );
 
-	char *ret = new char[len];
+	char *ret = new char[len+1];
 	fread( ret, len, sizeof(char), pFile);
+	ret[len] = '\0';
+	printf( "len: %d, ret: %s.\n", len, ret );
 	return ret;
 }
 
@@ -69,12 +72,14 @@ int main()
 
 	/* nothing personal, but I like not compromising the bot's account.
 	 * feel free to replace these with string constants in your build. */
-
 	const char* USERNAME = GetFileContents("/home/mark/.MeepBot/usr");
 	const char *PASSWORD = GetFileContents("/home/mark/.MeepBot/pwd");
 
 	if( !BOT->Login(USERNAME, PASSWORD) )
 		return 1;
+
+	delete[] USERNAME;
+	delete[] PASSWORD;
 
 	BOT->MainLoop();
 	BOT->Logout();
