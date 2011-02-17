@@ -9,7 +9,7 @@ local MAX_ROLLS = 20
 local MAX_SIDES = 1000
 
 local function DoRoll( sides )
-	return MeepBot.Rand( sides ) + 1
+	return MeepBot.Rand( sides )
 end
 
 local function RollsToStr( rolls )

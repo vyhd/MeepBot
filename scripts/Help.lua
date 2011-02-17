@@ -29,7 +29,9 @@ MeepBot.Commands["help"] = function( type, caller, params )
 		response = response .. " For info on a specific command, use !help [command]"
 	elseif not response then
 		response = ("Sorry, no help available for \"%s\"."):format(params)
+	else
+		response = "!" .. params .. " - " .. response
 	end
 
-	MeepBot.SayOrPM( type, caller, ("!%s - %s"):format(params, response) )
+	MeepBot.SayOrPM( type, caller, response )
 end

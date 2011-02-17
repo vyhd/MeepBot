@@ -42,7 +42,7 @@ MeepBot.Commands["8ball"] = function( type, caller, params )
 		return
 	end
 
-	local idx = MeepBot.Rand(#answers) + 1
+	local idx = MeepBot.Rand(#answers)
 	local response = ("%s: %s."):format(caller, answers[idx])
 
 	MeepBot.SayOrPM( type, caller, response )
