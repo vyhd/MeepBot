@@ -37,7 +37,8 @@ local AllowedUsers =
 	"Fire_Adept"
 }
 
-local function IsAllowed( caller )
+-- not strictly true, since I added myself for debugging ease
+function IsMod( caller )
 	for i=1,#AllowedUsers do
 		if caller:lower() == AllowedUsers[i]:lower() then return true end
 	end

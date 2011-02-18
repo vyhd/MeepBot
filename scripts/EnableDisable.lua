@@ -10,14 +10,14 @@ MeepBot.IsEnabled = true
 -- can be done by rank + user database.
 
 MeepBot.Commands["enablebot"] = function( type, caller, params )
-	if IsAllowed( caller ) then
+	if IsMod( caller ) then
 		MeepBot.IsEnabled = true
 		MeepBot.Say( "Bot enabled." )
 	end
 end
 
 MeepBot.Commands["disablebot"] = function( type, caller, params )
-	if IsAllowed( caller ) then
+	if IsMod( caller ) then
 		MeepBot.IsEnabled = false
 		MeepBot.Say( "Bot disabled." )
 	end
