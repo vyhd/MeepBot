@@ -1,4 +1,5 @@
-MeepBot.Commands["geico"] = function( type, caller, params )
+--MeepBot.Commands["geico"] = function( type, caller, params )
+local foo = function( type, caller, params )
 	if not MeepBot.IsEnabled then return end
 
 	local saved = MeepBot.Rand( 10000 )
