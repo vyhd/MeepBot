@@ -29,7 +29,7 @@ sqlite3_stmt *SQLite::Prepare( sqlite3 *db, const char *fmt, ... )
 	char *query = sqlite3_vmprintf( fmt, args );
 	va_end( args );
 
-	printf( "SQLite: prepared \"%s\"", query );
+	printf( "SQLite: prepared \"%s\"\n", query );
 
 	/* XXX: not needed. check to see if NULL will work */
 	const char *szTail;

@@ -20,9 +20,12 @@ public:
 	/* NULL = no match, otherwise, delete[] when you're finished. */
 	const char* GetQuote( int iQuoteID ) const;
 
+	/* returns the person who added the quote with the given ID */
+	const char* GetQuoteAuthor( int iQuoteID ) const;
+
 	/* adder = the person whs 'calling' AddQuote. */
-	void AddQuote( const char *adder, const char *quote );
-	void DeleteQuote( int iQuoteID );
+	bool AddQuote( const char *adder, const char *quote );
+	bool RemoveQuote( int iQuoteID );
 private:
 	sqlite3* m_pDB;
 };

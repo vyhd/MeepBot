@@ -57,6 +57,7 @@ void MeepBot::Say( const char *str )
 	if( !m_bLoggedIn || strlen(str) == 0 )
 		return;
 
+	printf( "[MeepBot] %s\n", str );
 	Write( ChatPacket(ROOM_MESSAGE, BLANK, str, RED, GREEN, BLUE) );
 }
 
@@ -65,6 +66,7 @@ void MeepBot::Emote( const char *str )
 	if( !m_bLoggedIn || strlen(str) == 0 )
 		return;
 
+	printf( "**MeepBot %s\n", str );
 	Write( ChatPacket(ROOM_ACTION, BLANK, str) );
 }
 
@@ -73,6 +75,7 @@ void MeepBot::PM( const char *name, const char *msg )
 	if( !m_bLoggedIn || strlen(msg) == 0 )
 		return;
 
+	printf( "[MeepBot] -> [%s] %s\n", name, msg );
 	/* TODO: verify that a user is actually on the server first */
 	Write( ChatPacket(USER_PM, name, msg) );
 }
@@ -382,20 +385,25 @@ static int AddQuote( lua_State *L )
 		return 1;
 	}
 
-	BOT->m_pQuotesDB->AddQuote( adder, quote );
+	lua_pushboolean( L, BOT->m_pQuotesDB->AddQuote(adder, quote) );
+	return 1;
+}
 
-	lua_pushboolean( L, 1 );
+static int GetRandomQuoteID( lua_State *L )
+{
+	lua_pushnumber( L, BOT->m_pQuotesDB->GetRandomQuoteID() );
 	return 1;
 }
 
 static int GetQuote( lua_State *L )
 {
-	int idx = 0;
+	if( !lua_isnumber(L, -1) )
+	{
+		lua_pushnil( L );
+		return 1;
+	}
 
-	if( lua_isnumber(L, -1) )
-		idx = int( lua_tonumber(L,-1) );
-	else
-		idx = BOT->m_pQuotesDB->GetRandomQuoteID();
+	int idx = int( lua_tonumber(L,-1) );
 
 	/* GetQuote allocates 'quote' - lua_tostring copies, then we delete */
 	{
@@ -412,15 +420,67 @@ static int GetQuote( lua_State *L )
 	return 1;
 }
 
+static int RemoveQuote( lua_State *L )
+{
+	if( !lua_isnumber(L, -1) )
+	{
+		lua_pushboolean( L, 0 );
+		return 1;
+	}
+
+	/* currently, we don't have a way to tell if a quote was
+	 * actually deleted. just return true if we didn't bork. */
+
+	int idx = int( lua_tonumber(L,-1) );
+	BOT->m_pQuotesDB->RemoveQuote( idx );
+
+	lua_pushboolean( L, 1 );
+
+	return true;
+}
+
+static int GetQuoteAuthor( lua_State *L )
+{
+	if( !lua_isnumber(L,-1) )
+	{
+		lua_pushnil( L );
+		return 1;
+	}
+
+	int idx = (int)lua_tonumber(L, -1);
+
+	/* 'author' is allocated in GetQuoteAuthor, we delete[] it here. */
+	{
+		const char *author = BOT->m_pQuotesDB->GetQuoteAuthor( idx );
+
+		if( author )
+			lua_pushstring( L, author );
+		else
+			lua_pushnil( L );
+
+		delete[] author;
+	}
+
+	return 1;
+}
+
 static const luaL_reg bot_funcs[] =
 {
+	/* chat message functions */
 	{ "Say",	Say },
 	{ "Emote",	Emote },
 	{ "PM",		PM },
+
+	/* script utility functions */
 	{ "Rand",	Rand },
 	{ "Resolve",	Resolve },
-	{ "AddQuote",	AddQuote },
-	{ "GetQuote",	GetQuote },
+
+	/* quote functions */
+	{ "AddQuote",		AddQuote },
+	{ "GetQuote",		GetQuote },
+	{ "RemoveQuote",	RemoveQuote },
+	{ "GetQuoteAuthor",	GetQuoteAuthor },
+	{ "GetRandomQuoteID",	GetRandomQuoteID },
 	{ NULL, NULL },
 };
 
