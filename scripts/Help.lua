@@ -1,8 +1,11 @@
 -- UGLY: until we have a guaranteed order of execution (e.g. alphabetical
 -- iteration over the scripts directory), we need this in every file.
 -- FIX ASAP!
-MeepBot.CommandHelp = MeepBot.CommandHelp and MeepBot.CommandHelp or { }
-MeepBot.CommandHelp["help"] = "Helps us help you help us all."
+MeepBot.Help = MeepBot.Help and MeepBot.Help or { }
+MeepBot.Help["help"] = "Helps us help you help us all."
+
+-- no better place for this currently...
+MeepBot.Help["reload"] = "Reloads the bot's Lua scripting. Call it if you like, it's harmless."
 
 local function GetFunctionsSorted()
 	local funcs = { }
@@ -13,19 +16,18 @@ local function GetFunctionsSorted()
 	funcs[#funcs+1] = "reload"
 	table.sort( funcs )
 
-	local ret = ""
-
-	for i=1,#funcs do ret = ret .. " " .. funcs[i] end
+	local ret = funcs[1]
+	for i=2,#funcs do ret = ret .. ", " .. funcs[i] end
 	return ret .. "."
 end
 
 MeepBot.Commands["help"] = function( type, caller, params )
 	if not MeepBot.IsEnabled then return end
 
-	local response = MeepBot.CommandHelp[params]
+	local response = MeepBot.Help[params]
 
 	if not params then
-		response = "Registered commands:" .. GetFunctionsSorted()
+		response = "Registered commands: " .. GetFunctionsSorted()
 		response = response .. " For info on a specific command, use !help [command]"
 	elseif not response then
 		response = ("Sorry, no help available for \"%s\"."):format(params)

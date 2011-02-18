@@ -1,29 +1,43 @@
+-- UGLY: until we have a guaranteed order of execution (e.g. alphabetical
+-- iteration over the scripts directory), we need this in every file.
+-- FIX ASAP!
+MeepBot.Help = MeepBot.Help and MeepBot.Help or { }
+
+MeepBot.Help["quote"] = "displays a quote from the database. If no ID or pattern is given, a random quote is displayed."
+MeepBot.Help["addquote"] = "adds a quote to the quotes database. (Ops)"
+MeepBot.Help["removequote"] = "removes a quote from the database by its ID. (Mods)"
+
 MeepBot.Commands["addquote"] = function( type, caller, params )
 	if not IsMod(caller) then return end
 
+	local response
+
 	if MeepBot.AddQuote(caller, params) then
-		MeepBot.Say( "Quote added." )
+		response = "Quote added."
 	else
-		MeepBot.Say( "Oh noes! Quote not added! :(" )
+		response = "Oh noes! Quote not added! :("
 	end
+
+	MeepBot.SayOrPM( type, caller, response )
 end
 
 MeepBot.Commands["removequote"] = function( type, caller, params )
 	if not IsMod(caller) then return end
 
-	local idx = tonumber(params)
-	if not idx then return end
+	local id = tonumber(params)
+	if not id then return end
 
-	local author = MeepBot.GetQuoteAuthor( idx )
+	local author = MeepBot.GetQuoteAuthor( id )
 
 	if not author then
 		MeepBot.SayOrPM( type, caller, "That quote doesn't exist!" )
 		return
 	end
 
-	local msg = ("#%d was added by %s. Maybe you should smite them?"):format(idx, author)
+	local msg = ("Quote #%d was added by %s."):format(id, author)
+	msg = msg .. " Maybe you should smite them?"
 
-	MeepBot.RemoveQuote( idx )
+	MeepBot.RemoveQuote( id )
 	MeepBot.SayOrPM( type, caller, msg )
 end
 	
@@ -31,14 +45,28 @@ end
 MeepBot.Commands["quote"] = function( type, caller, params )
 	if not MeepBot.IsEnabled then return end
 
-	local idx = params and tonumber(params) or MeepBot.GetRandomQuoteID()
-	local quote = MeepBot.GetQuote( idx )
+	local paramtype = gettype(params)
+	local id, response = nil, nil
 
-	if quote and gettype(quote) == "string" then
-		MeepBot.Say( "#" .. idx .. ": " .. quote )
-	elseif not params then
-		MeepBot.Say( "No quotes found. Maybe you should add some?" )
+	if tonumber(params) then
+		id = tonumber(params)
+	elseif paramtype == "string" then
+		id = MeepBot.GetQuoteIDByPattern( params );
 	else
-		MeepBot.Say( "Quote not found!" );
+		id = MeepBot.GetRandomQuoteID();
 	end
+
+	-- a valid index guarantees that a quote is mapped to it
+	if not id then
+		if not params then
+			response = "No quotes found. Maybe you should add some?"
+		else
+			response = "Quote not found!"
+		end
+	else
+		local quote = MeepBot.GetQuoteByID( id );
+		response = "#" .. id .. ": " .. quote
+	end
+
+	MeepBot.SayOrPM( type, caller, response )
 end

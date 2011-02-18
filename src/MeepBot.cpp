@@ -132,6 +132,11 @@ bool MeepBot::Connect( const char *host, unsigned port, int retries )
 	return false;
 }
 
+void MeepBot::Disconnect()
+{
+	m_Socket.Close();
+}
+
 bool MeepBot::Login( const char *name, const char *pwd )
 {
 	ChatPacket req = ChatPacket(USER_JOIN, name, pwd);
@@ -391,11 +396,37 @@ static int AddQuote( lua_State *L )
 
 static int GetRandomQuoteID( lua_State *L )
 {
-	lua_pushnumber( L, BOT->m_pQuotesDB->GetRandomQuoteID() );
+	int idx = BOT->m_pQuotesDB->GetRandomID();
+
+	if( idx > 0 )
+		lua_pushnumber( L, idx );
+	else
+		lua_pushnil( L );
+
 	return 1;
 }
 
-static int GetQuote( lua_State *L )
+static int GetQuoteIDByPattern( lua_State *L )
+{
+	if( !lua_isstring(L, -1) )
+	{
+		lua_pushnil( L );
+		return 1;
+	}
+
+	const char *pattern = lua_tostring(L, -1);
+
+	int idx = BOT->m_pQuotesDB->GetIDByPattern( pattern );
+
+	if( idx > 0 )
+		lua_pushnumber( L, idx );
+	else
+		lua_pushnil( L );
+
+	return 1;
+}
+
+static int GetQuoteByID( lua_State *L )
 {
 	if( !lua_isnumber(L, -1) )
 	{
@@ -407,7 +438,7 @@ static int GetQuote( lua_State *L )
 
 	/* GetQuote allocates 'quote' - lua_tostring copies, then we delete */
 	{
-		const char *quote = BOT->m_pQuotesDB->GetQuote( idx );
+		const char *quote = BOT->m_pQuotesDB->GetQuoteByID( idx );
 
 		if( quote )
 			lua_pushstring( L, quote );
@@ -477,10 +508,11 @@ static const luaL_reg bot_funcs[] =
 
 	/* quote functions */
 	{ "AddQuote",		AddQuote },
-	{ "GetQuote",		GetQuote },
+	{ "GetQuoteByID",	GetQuoteByID },
 	{ "RemoveQuote",	RemoveQuote },
 	{ "GetQuoteAuthor",	GetQuoteAuthor },
-	{ "GetRandomQuoteID",	GetRandomQuoteID },
+	{ "GetRandomQuoteID",		GetRandomQuoteID },
+	{ "GetQuoteIDByPattern",	GetQuoteIDByPattern },
 	{ NULL, NULL },
 };
 

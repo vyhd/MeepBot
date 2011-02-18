@@ -1,3 +1,10 @@
+-- UGLY: until we have a guaranteed order of execution (e.g. alphabetical
+-- iteration over the scripts directory), we need this in every file.
+-- FIX ASAP!
+MeepBot.Help = MeepBot.Help and MeepBot.Help or { }
+MeepBot.Help["enablebot"] = "Enables all operator commands. (Mods)"
+MeepBot.Help["disablebot"] = "Disables all operator commands. (Mods)"
+
 -- this flag allows selected users to enable and disable the bot
 -- as needed (to prevent spam, abuse, etc. etc.)
 --

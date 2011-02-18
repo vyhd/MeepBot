@@ -1,9 +1,9 @@
 -- UGLY: until we have a guaranteed order of execution (e.g. alphabetical
 -- iteration over the scripts directory), we need this in every file.
 -- FIX ASAP!
-MeepBot.CommandHelp = MeepBot.CommandHelp and MeepBot.CommandHelp or { }
-MeepBot.CommandHelp["roll"] = "rolls one or more dice with the given number of sides, e.g. '2d8' rolls two 8-sided dice."
-MeepBot.CommandHelp["rollx"] = "rolls one die with up to 4294967295 sides, if you really need that sort of thing."
+MeepBot.Help = MeepBot.Help and MeepBot.Help or { }
+MeepBot.Help["roll"] = "rolls one or more dice with the given number of sides, e.g. '2d8' rolls two 8-sided dice."
+MeepBot.Help["rollx"] = "rolls one die with up to 4294967295 sides, if you really need that sort of thing."
 
 local DEFAULT_NUM_SIDES = 6
 local MAX_ROLLS = 20

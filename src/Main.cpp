@@ -70,21 +70,28 @@ int main()
 		return 1;
 	}
 
-	if( !BOT->Connect("runevillage.com", 7005) )
-		return 1;
-
 	/* nothing personal, but I like not compromising the bot's account.
 	 * feel free to replace these with string constants in your build. */
 	const char* USERNAME = GetFileContents("/home/mark/.MeepBot/usr");
 	const char *PASSWORD = GetFileContents("/home/mark/.MeepBot/pwd");
 
-	if( !BOT->Login(USERNAME, PASSWORD) )
-		return 1;
+	while( BOT->Connect("runevillage.com", 7005) )
+	{
+		if( !BOT->Login(USERNAME, PASSWORD) )
+		{
+			printf( "Couldn't login.\n" );
+			return 1;
+		}
+
+		BOT->MainLoop();
+		BOT->Logout();
+		BOT->Disconnect();
+		sleep( 5 );
+	}
 
 	delete[] USERNAME;
 	delete[] PASSWORD;
 
-	BOT->MainLoop();
 	BOT->Logout();
 
 	return 0;

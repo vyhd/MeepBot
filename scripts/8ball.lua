@@ -1,8 +1,8 @@
 -- UGLY: until we have a guaranteed order of execution (e.g. alphabetical
 -- iteration over the scripts directory), we need this in every file.
 -- FIX ASAP!
-MeepBot.CommandHelp = MeepBot.CommandHelp and MeepBot.CommandHelp or { }
-MeepBot.CommandHelp["8ball"] = "Ask a question, get an answer."
+MeepBot.Help = MeepBot.Help and MeepBot.Help or { }
+MeepBot.Help["8ball"] = "Ask a question, get an answer."
 
 local answers =
 {

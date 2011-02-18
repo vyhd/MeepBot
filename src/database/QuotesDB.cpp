@@ -23,12 +23,9 @@ QuotesDB::QuotesDB( sqlite3 *db ) : m_pDB(db)
 	sqlite3_finalize( stmt );
 }
 
-const char* QuotesDB::GetQuote( int iQuoteID ) const
+/* gets the first quote from the results, assuming 'quote' is in column 0. */
+static const char* GetFirstQuote( sqlite3 *db, sqlite3_stmt *stmt )
 {
-	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
-		"SELECT quote FROM %s WHERE id = %d;",
-		QUOTES_TABLE, iQuoteID );
-
 	int status = sqlite3_step( stmt );
 	char *ret = NULL;
 
@@ -47,9 +44,42 @@ const char* QuotesDB::GetQuote( int iQuoteID ) const
 	}
 	else if( status != SQLITE_DONE )
 	{
-		printf( "GetQuote: %s\n", sqlite3_errmsg(m_pDB) );
+		printf( "GetQuote: %s\n", sqlite3_errmsg(db) );
 	}
 
+	return ret;
+}
+
+const char* QuotesDB::GetQuoteByID( int iQuoteID ) const
+{
+	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
+		"SELECT quote FROM %s WHERE id = %d;",
+		QUOTES_TABLE, iQuoteID );
+
+	const char *ret = GetFirstQuote( m_pDB, stmt );
+	sqlite3_finalize( stmt );
+
+	return ret;
+}
+
+int QuotesDB::GetIDByPattern( const char *pattern ) const
+{
+	int ret = -1;
+
+	if( pattern == NULL )
+		return ret;
+
+	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
+		"SELECT id FROM %s WHERE quote LIKE '%%%q%%' ORDER BY RANDOM() LIMIT 1;",
+		QUOTES_TABLE, pattern );
+
+	int status = sqlite3_step( stmt );
+
+	if( status == SQLITE_ROW )
+		ret = sqlite3_column_int( stmt, 0 );
+	else
+		printf( "No match for pattern \"%s\"", pattern );
+	
 	sqlite3_finalize( stmt );
 
 	return ret;
@@ -91,7 +121,7 @@ const char* QuotesDB::GetQuoteAuthor( int iQuoteID ) const
 	return ret;
 }
 
-int QuotesDB::GetRandomQuoteID()
+int QuotesDB::GetRandomID() const
 {
 	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
 		"SELECT id FROM %s ORDER BY RANDOM() LIMIT 1;",

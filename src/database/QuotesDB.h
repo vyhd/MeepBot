@@ -15,10 +15,11 @@ class QuotesDB
 public:
 	QuotesDB( sqlite3* db );
 
-	int GetRandomQuoteID();
+	int GetRandomID() const;
+	int GetIDByPattern( const char *pattern ) const;
 
 	/* NULL = no match, otherwise, delete[] when you're finished. */
-	const char* GetQuote( int iQuoteID ) const;
+	const char* GetQuoteByID( int iQuoteID ) const;
 
 	/* returns the person who added the quote with the given ID */
 	const char* GetQuoteAuthor( int iQuoteID ) const;
