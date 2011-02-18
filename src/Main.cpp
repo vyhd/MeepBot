@@ -15,7 +15,10 @@ static unsigned exit_lock = 0;
 void clean_exit( int signum )
 {
 	if( exit_lock > 0 )
-		return;
+	{
+		printf( "Alright, alright. Exiting now.\n" );
+		exit( 1 );
+	}
 
 	printf( "Received signal %d: %s\n", signum, strsignal(signum) );
 
@@ -48,7 +51,6 @@ char* GetFileContents( const char *path )
 	char *ret = new char[len+1];
 	fread( ret, len, sizeof(char), pFile);
 	ret[len] = '\0';
-	printf( "len: %d, ret: %s.\n", len, ret );
 	return ret;
 }
 
@@ -75,18 +77,28 @@ int main()
 	const char* USERNAME = GetFileContents("/home/mark/.MeepBot/usr");
 	const char *PASSWORD = GetFileContents("/home/mark/.MeepBot/pwd");
 
+	unsigned wait_length = 1;
+
 	while( BOT->Connect("runevillage.com", 7005) )
 	{
+		wait_length *= 2;
+
+		// bound up at half an hour
+		if( wait_length > 3000 )
+			wait_length = 3000;
+
+		printf( "Attempting to log in...\n" );
 		if( !BOT->Login(USERNAME, PASSWORD) )
 		{
-			printf( "Couldn't login.\n" );
-			return 1;
+			sleep( wait_length );
+			printf( "Waiting %d seconds to reconnect.\n", wait_length );
+			continue;
 		}
-
+		
 		BOT->MainLoop();
 		BOT->Logout();
 		BOT->Disconnect();
-		sleep( 5 );
+		wait_length = 1;	/* reset */
 	}
 
 	delete[] USERNAME;
