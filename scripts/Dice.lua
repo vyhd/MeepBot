@@ -3,6 +3,7 @@
 -- FIX ASAP!
 MeepBot.CommandHelp = MeepBot.CommandHelp and MeepBot.CommandHelp or { }
 MeepBot.CommandHelp["roll"] = "rolls one or more dice with the given number of sides, e.g. '2d8' rolls two 8-sided dice."
+MeepBot.CommandHelp["rollx"] = "rolls one die with up to 4294967295 sides, if you really need that sort of thing."
 
 local DEFAULT_NUM_SIDES = 6
 local MAX_ROLLS = 20
@@ -27,19 +28,17 @@ end
 MeepBot.Commands["roll"] = function( type, caller, params )
 	if not MeepBot.IsEnabled then return end
 
-	-- defaults
-	local num = 1
-	local sides = DEFAULT_NUM_SIDES
+	-- throwaway, number of dice, number of sides per die
+	local _, num, sides
 
 	if params then
-		-- throwaway variable for values we don't need
-		local _	
 
 		_, _, num, sides = params:find( "^(%d+)d?(%d*)" )
 		num = tonumber(num)
 		sides = tonumber(sides)
 	end
 
+	if not num then num = 1 end
 	if not sides then sides = DEFAULT_NUM_SIDES end
 
 	if num < 0 or num > MAX_ROLLS then
