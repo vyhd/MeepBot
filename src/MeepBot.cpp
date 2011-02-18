@@ -1,5 +1,6 @@
 #include "MeepBot.h"
-#include "database/UserDB.h"
+#include "database/SQLite.h"
+#include "database/QuotesDB.h"
 #include "packet/ChatPacket.h"
 #include "packet/MessageCodes.h"
 #include "packet/PacketUtil.h"
@@ -13,6 +14,7 @@
 #include <cstring>
 
 using namespace std;
+struct sqlite3;
 
 MeepBot *BOT = NULL;
 
@@ -33,6 +35,10 @@ MeepBot::MeepBot()
 
 	memset( m_sReadBuffer, 0, BUFFER_SIZE );
 
+	/* Open a database connection and instantiate our databases. */
+	m_pDatabase = SQLite::Open( "MeepBot.db" );
+	m_pQuotesDB = new QuotesDB( m_pDatabase );
+
 	/* lol I'm so clever :awesome: */
 	unsigned int seed[8] = { 'M','E','E','P','B','O','T', time(NULL) };
 	m_pISAAC = new ISAAC( seed );
@@ -41,6 +47,9 @@ MeepBot::MeepBot()
 MeepBot::~MeepBot()
 {
 	delete m_pISAAC;
+
+	delete m_pQuotesDB;
+	SQLite::Close( m_pDatabase );
 }
 
 void MeepBot::Say( const char *str )
@@ -103,19 +112,20 @@ bool MeepBot::ReloadLua( std::string &err )
 
 bool MeepBot::Connect( const char *host, unsigned port, int retries )
 {
-	while( retries > 0 )
+	/* allow -1 to mean "retry infinitely" */
+	while( retries > 0 || retries == -1 )
 	{
-		bool bConnected = m_Socket.OpenHost(host, port);
-
-		if( bConnected )
+		if( m_Socket.OpenHost(host, port) )
 			return true;
 
-		retries--;
+		if( retries > 0 )
+			retries--;
+
 		printf( "Retrying in 5 seconds.\n" );
 		sleep( 5 );
 	}
 
-	printf( "Gave up connecting. Better luck next time." );
+	printf( "Gave up connecting. Better luck next time.\n" );
 	return false;
 }
 
@@ -361,6 +371,47 @@ static int Resolve( lua_State *L )
 	return 1;
 }
 
+static int AddQuote( lua_State *L )
+{
+	const char *adder = lua_tostring( L, -2 );
+	const char *quote = lua_tostring( L, -1 );
+
+	if( adder == NULL || quote == NULL )
+	{
+		lua_pushboolean( L, 0 );
+		return 1;
+	}
+
+	BOT->m_pQuotesDB->AddQuote( adder, quote );
+
+	lua_pushboolean( L, 1 );
+	return 1;
+}
+
+static int GetQuote( lua_State *L )
+{
+	int idx = 0;
+
+	if( lua_isnumber(L, -1) )
+		idx = int( lua_tonumber(L,-1) );
+	else
+		idx = BOT->m_pQuotesDB->GetRandomQuoteID();
+
+	/* GetQuote allocates 'quote' - lua_tostring copies, then we delete */
+	{
+		const char *quote = BOT->m_pQuotesDB->GetQuote( idx );
+
+		if( quote )
+			lua_pushstring( L, quote );
+		else
+			lua_pushnil( L );
+
+		delete[] quote;
+	}
+
+	return 1;
+}
+
 static const luaL_reg bot_funcs[] =
 {
 	{ "Say",	Say },
@@ -368,6 +419,8 @@ static const luaL_reg bot_funcs[] =
 	{ "PM",		PM },
 	{ "Rand",	Rand },
 	{ "Resolve",	Resolve },
+	{ "AddQuote",	AddQuote },
+	{ "GetQuote",	GetQuote },
 	{ NULL, NULL },
 };
 

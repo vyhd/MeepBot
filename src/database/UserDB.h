@@ -1,17 +1,10 @@
 #ifndef USER_DB_H
 #define USER_DB_H
 
-#include <cstdarg>
-#include "SQLiteDB.h"
-
 const char* const USER_TABLE = "users";
 
-/* User DB layout (version 1):
- * CREATE TABLE users(
- *	userName TEXT UNIQUE PRIMARY KEY COLLATE NOCASE,
- *	accessLevel TINYINT,
- *	description TEXT)
- */
+struct sqlite3;
+struct UserEntry;
 
 enum AccessLevel
 {
@@ -22,9 +15,11 @@ enum AccessLevel
 	LEVEL_ADMIN	/* manage the bot, manage all other users */
 };
 
-class UserDB: public SQLiteDB
+class UserDB
 {
 public:
+	UserDB( sqlite3 *db );
+
 	AccessLevel GetAccessLevel( const char *username );
 	bool SetAccessLevel( const char *username, AccessLevel level );
 
@@ -32,6 +27,12 @@ public:
 	bool SetDescription( const char *name, const char *desc );
 
 	bool Protect( bool bProtect );
+
+private:
+	/* Returns true and fills out entry if the user's entry exists */
+	bool GetUserEntry( const char *username, UserEntry *entry );
+
+	sqlite3* m_pDB;
 };
 
 #endif // USER_DB_H

@@ -6,10 +6,11 @@
 #include "packet/ChatPacket.h" 
 #include <string>
 
+/* a bunch of forward declarations so we don't need their headers here */
 struct lua_State;
+struct sqlite3;
 class ISAAC;
 class MeepBot;
-class UserDB;
 class QuotesDB;
 
 /* This class acts as a singleton, since, well, it's only meant to be
@@ -46,8 +47,10 @@ public:
 	 * and I don't feel like jumping through hoops to make it pretty */
 	UserList m_UserList;
 	ISAAC *m_pISAAC;
+
+	sqlite3* m_pDatabase;
 	QuotesDB *m_pQuotesDB;
-	UserDB *m_pUserDB;
+//	UserDB *m_pUserDB;
 
 	lua_State *L;
 

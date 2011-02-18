@@ -2,6 +2,38 @@
 #include <cstring>	/* for strlen */
 #include "UserDB.h"
 
+/* User DB layout (version 1):
+ * CREATE TABLE users(
+ *	userName TEXT UNIQUE PRIMARY KEY COLLATE NOCASE,
+ *	description TEXT,
+ *	accessLevel INTEGER,
+ *	isProtected INTEGER)
+ */
+
+struct UserEntry
+{
+	AccessLevel level;
+	string name, desc;
+};
+
+bool UserDB::GetUserEntry( const char *name, UserEntry *entry )
+{
+	if( name == NULL || entry == NULL )
+		return false;
+
+	sqlite3_stmt stmt = Prepare(
+		"SELECT * from %s WHERE username = %q LIMIT 1",
+		USER_TABLE, name );
+
+	if( stmt == NULL )
+		return false;
+
+	/* magic happens */
+
+	sqlite3_finalize( stmt );
+	return true;
+}
+
 AccessLevel UserDB::GetAccessLevel( const char *name )
 {
 	sqlite3_stmt *stmt = Prepare( "SELECT accessLevel FROM users WHERE username = %q", username );
@@ -16,7 +48,7 @@ AccessLevel UserDB::GetAccessLevel( const char *name )
 	return level;
 }
 
-bool SetAccessLevel( const char *name, AccessLevel level )
+bool UserDB::SetAccessLevel( const char *name, AccessLevel level )
 {
 	sqlite3_stmt *stmt = Prepare( "SELECT isProtected FROM users WHERE username = %q", username );
 

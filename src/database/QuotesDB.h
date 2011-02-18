@@ -3,20 +3,28 @@
 
 const char* const QUOTES_TABLE = "quotes";
 
-/* general SQL setup (for later reference):
- * id - int, unique for each quote, used to reference them
- * quote - varchar, the actual quote itself
- * addedBy - varchar, name of the person who added this quote
- */
+/* All quotes have a unique ID under this database. For simplicity's sake,
+ * all external interfaces need to handle quotes by ID instead of by text
+ * (e.g. retrieving or deleting quotes). Having the random quote function
+ * return a random ID also allows the caller to know the ID. Good, yes? */
 
-class QuotesDB: public SQLiteDB
+struct sqlite3;
+
+class QuotesDB
 {
 public:
-	/* we require the caller to get a random ID, then dereference it,
-	 * so the caller knows the ID and can get the quote from it. */
+	QuotesDB( sqlite3* db );
 
-	const char* GetQuote( int iQuoteID );
 	int GetRandomQuoteID();
+
+	/* NULL = no match, otherwise, delete[] when you're finished. */
+	const char* GetQuote( int iQuoteID ) const;
+
+	/* adder = the person whs 'calling' AddQuote. */
+	void AddQuote( const char *adder, const char *quote );
+	void DeleteQuote( int iQuoteID );
+private:
+	sqlite3* m_pDB;
 };
 
 #endif // QUOTE_DB_H
