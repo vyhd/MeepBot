@@ -2,7 +2,7 @@ bin_PROGRAMS = MeepBot
 noinst_PROGRAMS = MeepBot
 
 # UGLY: manually include sqlite3 here until we make autotools do it for us.
-AM_CXXFLAGS = -Wall -Wextra -pedantic-errors -isystem ../sqlite3
+AM_CXXFLAGS = -Wall -Wextra -fno-exceptions -pedantic-errors -isystem ../sqlite3
 
 ISAAC = util/ISAAC.cpp util/ISAAC.h util/ISAAC/rand.c util/ISAAC/rand.h
 Model = model/UserList.cpp model/UserList.h

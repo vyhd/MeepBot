@@ -46,7 +46,12 @@ MeepBot.Commands["quote"] = function( type, caller, params )
 	if tonumber(params) then
 		id = tonumber(params)
 	elseif paramtype == "string" then
-		id = MeepBot.GetQuoteIDByPattern( params );
+		-- HACK: if the param is "me", use the caller
+		if params:lower() == "me" then
+			id = MeepBot.GetQuoteIDByPattern( caller );
+		else
+			id = MeepBot.GetQuoteIDByPattern( params );
+		end
 	else
 		id = MeepBot.GetRandomQuoteID();
 	end

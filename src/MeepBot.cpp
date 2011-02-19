@@ -361,6 +361,12 @@ static int Resolve( lua_State *L )
 	const char *caller = lua_tostring( L, -2 );
 	const char *pattern = lua_tostring( L, -1 );
 
+	if( !caller || !pattern )
+	{
+		lua_pushnil( L );
+		return 1;
+	}
+
 	lua_pushstring( L, BOT->m_UserList.Resolve(caller, pattern).c_str() );
 	return 1;
 }

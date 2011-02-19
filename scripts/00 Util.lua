@@ -37,7 +37,8 @@ local AllowedUsers =
 	"TheAnimal",
 	"bluecoat",
 	"Fire_Adept",
-	"Glodenox"
+	"Glodenox",
+	"Thyker"
 }
 
 -- not strictly true, since I added myself for debugging ease
