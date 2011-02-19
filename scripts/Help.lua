@@ -1,7 +1,3 @@
--- UGLY: until we have a guaranteed order of execution (e.g. alphabetical
--- iteration over the scripts directory), we need this in every file.
--- FIX ASAP!
-MeepBot.Help = MeepBot.Help and MeepBot.Help or { }
 MeepBot.Help["help"] = "Helps us help you help us all."
 
 -- no better place for this currently...

@@ -1,7 +1,3 @@
--- UGLY: until we have a guaranteed order of execution (e.g. alphabetical
--- iteration over the scripts directory), we need this in every file.
--- FIX ASAP!
-MeepBot.Help = MeepBot.Help and MeepBot.Help or { }
 MeepBot.Help["roll"] = "rolls one or more dice with the given number of sides, e.g. '2d8' rolls two 8-sided dice."
 MeepBot.Help["rollx"] = "rolls one die with up to 4294967295 sides, if you really need that sort of thing."
 

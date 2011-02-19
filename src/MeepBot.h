@@ -28,7 +28,7 @@ public:
 	void CloseLua();
 	bool ReloadLua( std::string &err );
 
-	bool Connect( const char *server, unsigned port, int retries = 3 );
+	bool Connect( const char *server, unsigned port );
 	void Disconnect();
 	bool Login( const char *name, const char *pwd );
 	void Logout();

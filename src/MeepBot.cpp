@@ -113,23 +113,9 @@ bool MeepBot::ReloadLua( std::string &err )
 	return OpenLua( err );
 }
 
-bool MeepBot::Connect( const char *host, unsigned port, int retries )
+bool MeepBot::Connect( const char *host, unsigned port )
 {
-	/* allow -1 to mean "retry infinitely" */
-	while( retries > 0 || retries == -1 )
-	{
-		if( m_Socket.OpenHost(host, port) )
-			return true;
-
-		if( retries > 0 )
-			retries--;
-
-		printf( "Retrying in 5 seconds.\n" );
-		sleep( 5 );
-	}
-
-	printf( "Gave up connecting. Better luck next time.\n" );
-	return false;
+	return m_Socket.OpenHost(host, port);
 }
 
 void MeepBot::Disconnect()

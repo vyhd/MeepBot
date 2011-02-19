@@ -79,25 +79,31 @@ int main()
 
 	unsigned wait_length = 1;
 
-	while( BOT->Connect("runevillage.com", 7005) )
+	while( true )
 	{
+		if( wait_length != 1 )
+		{
+			printf( "Waiting %d seconds to reconnect.\n", wait_length );
+			sleep( wait_length );
+		}
+
 		wait_length *= 2;
 
 		// bound up at half an hour
-		if( wait_length > 3000 )
-			wait_length = 3000;
+		if( wait_length > 1800 )
+			wait_length = 1800;
+
+		if( !BOT->Connect("runevillage.com", 7005) )
+			continue;
 
 		printf( "Attempting to log in...\n" );
 		if( !BOT->Login(USERNAME, PASSWORD) )
-		{
-			sleep( wait_length );
-			printf( "Waiting %d seconds to reconnect.\n", wait_length );
 			continue;
-		}
 		
 		BOT->MainLoop();
 		BOT->Logout();
 		BOT->Disconnect();
+
 		wait_length = 1;	/* reset */
 	}
 

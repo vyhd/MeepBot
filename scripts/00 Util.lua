@@ -1,6 +1,12 @@
--- Don't use the stuff in this file in a global scope
--- (i.e., only in functions that would be called by the bot):
--- the loading order of scripts isn't guaranteed.
+-- As of arbitrary git revision, this is actually executed in 
+-- alphabetical order, so we can do preparatory stuff here.
+
+-- Create the help table that contains help information for all commands.
+MeepBot.Help = { }
+
+-- alias for Lua's type() function so we can use it if needed
+-- without interfering with the 'type, caller, params' declarations
+gettype = type
 
 -- Either says in public or responds to the user in PM, whichever
 -- is appropriate. We can stuff the permissions logic in here later.
@@ -11,10 +17,6 @@ function MeepBot.SayOrPM( type, caller, response )
 		MeepBot.Say( response )
 	end
 end
-
--- alias for Lua's type() function so we can use it if needed
--- without interfering with the 'type, caller, params' declarations
-gettype = type
 
 -- Allow only certain users privileged bot instructions.
 -- this is a hack until we get the user database up and running.

@@ -44,41 +44,43 @@ int LuaUtil::CleanStack( lua_State *L )
 
 bool LuaUtil::RunScriptsFromDir( lua_State *L, const char *path )
 {
-	DIR *dir = opendir( path );
+	struct dirent **dirlist;
+	int results = scandir( path, &dirlist, NULL, alphasort );
 
-	if( dir == NULL )
+	if( results < 0 )
 	{
-		printf( "does not exist\n" );
+		printf( "\n" );
 		return false;
 	}
 
-	struct dirent *ent;
+	bool bRet = true;
 
-	while( true )
+	for( int i = 0; i < results; ++i )
 	{
-		ent = readdir( dir );
-
-		if( !ent )
-			break;
+		const char *name = dirlist[i]->d_name;
 
 		/* skip hidden and special files */
-		if( ent->d_name[0] == '.' )
+		if( name[0] == '.' )
 			continue;
 
-		printf( "running file '%s'...\n", ent->d_name );
+		printf( "running file '%s'...\n", name );
 
 		/* we need to send the full relative path */
-		std::string file = StringUtil::Format( "%s/%s", path, ent->d_name );
+		std::string file = StringUtil::Format( "%s/%s", path, name );
 
 		if( luaL_dofile(L, file.c_str()) != 0 )
 		{
 			printf( "failed: %s\n", lua_tostring( L, -1 ) );
-			closedir( dir );
-			return false;
+			bRet = false;
+			break;
 		}
 	}
 
-	closedir( dir );
-	return true;
+	for( int i = 0; i < results; ++i )
+		free( dirlist[i] );
+
+	free( dirlist );
+
+	return bRet;
 }
 

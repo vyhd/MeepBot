@@ -1,8 +1,3 @@
--- UGLY: until we have a guaranteed order of execution (e.g. alphabetical
--- iteration over the scripts directory), we need this in every file.
--- FIX ASAP!
-MeepBot.Help = MeepBot.Help and MeepBot.Help or { }
-
 MeepBot.Help["quote"] = "displays a quote from the database. If no ID or pattern is given, a random quote is displayed."
 MeepBot.Help["addquote"] = "adds a quote to the quotes database. (Ops)"
 MeepBot.Help["removequote"] = "removes a quote from the database by its ID. (Mods)"
