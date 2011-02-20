@@ -41,31 +41,36 @@ MeepBot.Commands["quote"] = function( type, caller, params )
 	if not MeepBot.IsEnabled then return end
 
 	local paramtype = gettype(params)
-	local id, response = nil, nil
 
-	if tonumber(params) then
-		id = tonumber(params)
-	elseif paramtype == "string" then
-		-- HACK: if the param is "me", use the caller
-		if params:lower() == "me" then
-			id = MeepBot.GetQuoteIDByPattern( caller );
-		else
-			id = MeepBot.GetQuoteIDByPattern( params );
-		end
+	-- HACK: if the param is "me", replace params with the caller's name
+	if params:lower() == "me" then params = caller end
+
+	if paramtype ~= "string" then
+		id = MeepBot.GetRandomQuoteID( id )
 	else
-		id = MeepBot.GetRandomQuoteID();
+		-- see if we're trying to get a specific quote ID
+		local _, _, id_to_try = params:find( "#(%d+)" )
+
+		if id_to_try and MeepBot.GetQuoteByID(id_to_try) then
+			id = id_to_try
+		else
+			MeepBot.GetQuoteIDByPattern( params )
+		end
 	end
 
-	-- a valid index guarantees that a quote is mapped to it
-	if not id then
-		if not params then
-			response = "No quotes found. Maybe you should add some?"
-		else
-			response = "Quote not found!"
-		end
-	else
-		local quote = MeepBot.GetQuoteByID( id );
+	-- at this point, if a quote matching our criteria is found, 'id'
+	-- will be the ID for that quote. If 'id' is nil, we have no match.
+
+	if id then
+		local quote = MeepBot.GetQuoteByID( id )
 		response = "#" .. id .. ": " .. quote
+	else
+		-- if we have no params, returning a random value failed,
+		-- which means we have no quotes at all; acknowledge that.
+		local no_match = "Quote not found!"
+		local none = "No quotes found. Maybe you should add some?"
+
+		response = params and no_match or none
 	end
 
 	MeepBot.SayOrPM( type, caller, response )

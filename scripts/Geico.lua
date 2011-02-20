@@ -1,13 +1,12 @@
---MeepBot.Commands["geico"] = function( type, caller, params )
-local foo = function( type, caller, params )
+MeepBot.Commands["geico"] = function( type, caller, params )
 	if not MeepBot.IsEnabled then return end
 
 	local saved = MeepBot.Rand( 10000 )
-	local target = params and MeepBot.Resolve(params) or caller
+	local target = params and MeepBot.Resolve(caller, params) or caller
 
-	if type == TYPE_CHAT then
-		MeepBot.Say( ("%s just saved $%d on their car insurance!"):format(target, saved) )
-	else
-		MeepBot.PM( caller, ("$%d (debug)"):format(saved) )
-	end
+	local pronoun = (target == caller) and "your" or "their"
+	local response = ("%s just saved $%d on %s car insurance"):format(target, saved, pronoun)
+	response = response .. " by switching to Geico!"
+
+	MeepBot.SayOrPM( type, caller, response )
 end
