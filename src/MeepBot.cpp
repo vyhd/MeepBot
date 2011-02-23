@@ -1,6 +1,7 @@
 #include "MeepBot.h"
 #include "database/SQLite.h"
 #include "database/QuotesDB.h"
+#include "database/UserDB.h"
 #include "packet/ChatPacket.h"
 #include "packet/MessageCodes.h"
 #include "packet/PacketUtil.h"
@@ -38,6 +39,7 @@ MeepBot::MeepBot()
 	/* Open a database connection and instantiate our databases. */
 	m_pDatabase = SQLite::Open( "MeepBot.db" );
 	m_pQuotesDB = new QuotesDB( m_pDatabase );
+	m_pUserDB = new UserDB( m_pDatabase );
 
 	/* lol I'm so clever :awesome: */
 	unsigned int seed[8] = { 'M','E','E','P','B','O','T', time(NULL) };

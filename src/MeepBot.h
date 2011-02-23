@@ -12,6 +12,7 @@ struct sqlite3;
 class ISAAC;
 class MeepBot;
 class QuotesDB;
+class UserDB;
 
 /* This class acts as a singleton, since, well, it's only meant to be
  * instantiated once. Use BOT to access global methods from outside. */
@@ -51,7 +52,7 @@ public:
 
 	sqlite3* m_pDatabase;
 	QuotesDB *m_pQuotesDB;
-//	UserDB *m_pUserDB;
+	UserDB *m_pUserDB;
 
 	lua_State *L;
 
