@@ -36,25 +36,26 @@ MeepBot.Commands["removequote"] = function( type, caller, params )
 	MeepBot.SayOrPM( type, caller, msg )
 end
 	
-
 MeepBot.Commands["quote"] = function( type, caller, params )
 	if not MeepBot.IsEnabled then return end
 
 	local paramtype = gettype(params)
-
-	-- HACK: if the param is "me", replace params with the caller's name
-	if params:lower() == "me" then params = caller end
+	local _, id, id_to_try, response
 
 	if paramtype ~= "string" then
-		id = MeepBot.GetRandomQuoteID( id )
+		id = MeepBot.GetRandomQuoteID()
 	else
+		-- HACK: if the param is "me", replace params with the caller's name
+		if params:lower() == "me" then params = caller end
+
 		-- see if we're trying to get a specific quote ID
 		local _, _, id_to_try = params:find( "#(%d+)" )
 
+		-- is the passed ID valid (i.e. does it map to a quote)?
 		if id_to_try and MeepBot.GetQuoteByID(id_to_try) then
 			id = id_to_try
 		else
-			MeepBot.GetQuoteIDByPattern( params )
+			id = MeepBot.GetQuoteIDByPattern( params )
 		end
 	end
 
@@ -75,3 +76,4 @@ MeepBot.Commands["quote"] = function( type, caller, params )
 
 	MeepBot.SayOrPM( type, caller, response )
 end
+
