@@ -13,7 +13,7 @@ bool Socket::OpenHost( const std::string &host, int port )
 
 	if( entry == NULL )
 	{
-		printf( "Lookup of \"%s\" failed: %u\n", host.c_str(), h_errno );
+		printf( "Lookup of \"%s\" failed: %s\n", host.c_str(), hstrerror(h_errno) );
 		return false;
 	}
 
