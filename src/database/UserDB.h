@@ -4,7 +4,6 @@
 const char* const USER_TABLE = "users";
 
 struct sqlite3;
-struct UserEntry;
 
 enum AccessLevel
 {
@@ -15,22 +14,38 @@ enum AccessLevel
 	LEVEL_ADMIN	/* manage the bot, manage all other users */
 };
 
+/* we need this for UserEntry */
+#include <string>
+
+struct UserEntry
+{
+	std::string desc;
+	AccessLevel level;
+	bool locked;
+};
+
 class UserDB
 {
 public:
 	UserDB( sqlite3 *db );
 
-	AccessLevel GetAccessLevel( const char *username );
+	bool AddUser( const char *name, const char *desc, AccessLevel level );
+
+	AccessLevel GetAccessLevel( const char *username ) const;
 	bool SetAccessLevel( const char *username, AccessLevel level );
 
-	const char* GetDescription( const char *username );
+	const char* GetDescription( const char *username ) const;
 	bool SetDescription( const char *name, const char *desc );
 
+	/* bProtect = whether to protect the user's rank or not */
 	bool Protect( bool bProtect );
 
 private:
-	/* Returns true and fills out entry if the user's entry exists */
-	bool GetUserEntry( const char *username, UserEntry *entry );
+	/* returns true if 'entry' could be filled with the user data */
+	bool GetUserEntry( const char *name, UserEntry *entry ) const;
+
+	/* inserts the data from the user entry into the database */
+	bool SetUserEntry( const char *name, UserEntry *entry );
 
 	sqlite3* m_pDB;
 };

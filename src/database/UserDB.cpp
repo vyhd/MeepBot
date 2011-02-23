@@ -1,65 +1,92 @@
 #include <sqlite3.h>
-#include <cstring>	/* for strlen */
 #include "UserDB.h"
+#include "SQLite.h"
 
-/* User DB layout (version 1):
- * CREATE TABLE users(
- *	userName TEXT UNIQUE PRIMARY KEY COLLATE NOCASE,
- *	description TEXT,
- *	accessLevel INTEGER,
- *	isProtected INTEGER)
- */
+using namespace std;
 
-struct UserEntry
+UserDB::UserDB( sqlite3* db )
 {
-	AccessLevel level;
-	string name, desc;
-};
+	m_pDB = db;
 
-bool UserDB::GetUserEntry( const char *name, UserEntry *entry )
+	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
+		"CREATE TABLE IF NOT EXISTS %s("
+		"username TEXT UNIQUE PRIMARY KEY COLLATE NOCASE, "
+		"description TEXT, accessLevel INTEGER, isProtected INTEGER);",
+		USER_TABLE );
+
+	if( sqlite3_step(stmt) != SQLITE_DONE )
+		printf( "error creating table: %s\n", sqlite3_errmsg(m_pDB) );
+
+	sqlite3_finalize( stmt );
+}
+
+bool UserDB::GetUserEntry( const char *name, UserEntry *entry ) const
 {
 	if( name == NULL || entry == NULL )
 		return false;
 
-	sqlite3_stmt stmt = Prepare(
+	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
 		"SELECT * from %s WHERE username = %q LIMIT 1",
 		USER_TABLE, name );
 
 	if( stmt == NULL )
 		return false;
 
-	/* magic happens */
+	int ret = sqlite3_step(stmt);
+
+	switch( ret )
+	{
+	case SQLITE_ROW:
+		{
+			AccessLevel l = AccessLevel( sqlite3_column_int(stmt, 2) );
+			const char *desc = (const char*)sqlite3_column_text(stmt, 1);
+			bool bLocked = sqlite3_column_int(stmt, 3) != 0;
+
+			entry->desc = desc;
+			entry->level = l;
+			entry->locked = bLocked;
+			break;
+		}
+	case SQLITE_DONE:
+		printf( "user not found: %s\n", name );
+		break;
+	default:
+		printf( "GetUserEntry: %s\n", sqlite3_errmsg(m_pDB) );
+		break;
+	}
 
 	sqlite3_finalize( stmt );
-	return true;
+	return ret == SQLITE_ROW;
 }
 
-AccessLevel UserDB::GetAccessLevel( const char *name )
+AccessLevel UserDB::GetAccessLevel( const char *name ) const
 {
-	sqlite3_stmt *stmt = Prepare( "SELECT accessLevel FROM users WHERE username = %q", username );
+	/* This is probably somewat wasteful, but much simpler. */
+	UserEntry entry;
 
-	/* if we didn't get the statement done, assume the worst :V */
-	if( stmt == NULL )
-		return LEVEL_USER;
+	if( !GetUserEntry( name, &entry) )
+		return LEVEL_BANNED;
 
-	AccessLevel level = GetInt(stmt, false);
-	sqlite3_finalize( stmt );
-
-	return level;
+	return entry.level;
 }
 
 bool UserDB::SetAccessLevel( const char *name, AccessLevel level )
 {
-	sqlite3_stmt *stmt = Prepare( "SELECT isProtected FROM users WHERE username = %q", username );
+	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
+		"SELECT isProtected FROM %s WHERE username = %q", 
+		USER_TABLE, name );
 
-	if( stmt == NULL )
+	if( stmt == NULL || sqlite3_step(stmt) != SQLITE_ROW )
 		return LEVEL_USER;
 
-	bool bIsProtected = GetInt( stmt, true );
+	bool bIsProtected = sqlite3_column_int( stmt, 0 );
 	sqlite3_finalize( stmt );
 
 	if( bIsProtected )
+	{
+		printf( "%s is protected, not setting level\n", name );
 		return false;
+	}
 
 	/* update the access level */
 	/* magic happens */
@@ -69,15 +96,8 @@ bool UserDB::SetAccessLevel( const char *name, AccessLevel level )
 
 const char* GetDescription( const char *name )
 {
-	sqlite3_stmt *stmt = Prepare( "SELECT description FROM users WHERE username = %q", name );
-
-	if( stmt == NULL )
-		return NULL;
-
-	const char *result = GetString( stmt, true );
-	sqlite3_finalize( stmt );
-
-	return result;
+	/* magic happens */
+	return NULL;
 }
 
 bool SetDescription( const char *name, const char *desc )
