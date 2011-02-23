@@ -63,6 +63,16 @@ bool LuaUtil::RunScriptsFromDir( lua_State *L, const char *path )
 		if( name[0] == '.' )
 			continue;
 
+		/* skip anything that isn't a Lua script */
+		unsigned len = strlen(name);
+		const char *ext = name + len - 3;
+ 
+		if( StringUtil::CompareNoCase(ext, "lua") != 0 )
+		{
+			printf( "%s not Lua script (%s), not running\n", name, ext );
+			continue;
+		}
+
 		printf( "running file '%s'...\n", name );
 
 		/* we need to send the full relative path */
