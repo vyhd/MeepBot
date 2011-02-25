@@ -14,11 +14,15 @@ enum AccessLevel
 	LEVEL_ADMIN	/* manage the bot, manage all other users */
 };
 
-/* we need this for UserEntry */
+/* we need this for UserEntry and GetDescription */
 #include <string>
 
 struct UserEntry
 {
+	UserEntry() { }
+	UserEntry( std::string desc_, AccessLevel level_, bool locked_ ) :
+		desc( desc_ ), level( level_ ), locked( locked_ ) { }
+
 	std::string desc;
 	AccessLevel level;
 	bool locked;
@@ -30,23 +34,24 @@ public:
 	UserDB( sqlite3 *db );
 
 	bool AddUser( const char *name, const char *desc, AccessLevel level );
+	bool HasUser( const char *name ) const;
 
 	AccessLevel GetAccessLevel( const char *username ) const;
 	bool SetAccessLevel( const char *username, AccessLevel level );
 
-	const char* GetDescription( const char *username ) const;
+	std::string GetDescription( const char *username ) const;
 	bool SetDescription( const char *name, const char *desc );
 
 	/* bProtect = whether to protect the user's rank or not */
 	bool Protect( bool bProtect );
 
-private:
 	/* returns true if 'entry' could be filled with the user data */
-	bool GetUserEntry( const char *name, UserEntry *entry ) const;
+	bool GetUserEntry( const char *name, UserEntry &entry ) const;
 
 	/* inserts the data from the user entry into the database */
-	bool SetUserEntry( const char *name, UserEntry *entry );
+	bool SetUserEntry( const char *name, const UserEntry &entry );
 
+private:
 	sqlite3* m_pDB;
 };
 

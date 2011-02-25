@@ -10,6 +10,8 @@
 #include "util/StringUtil.h"
 #include <lua5.1/lua.hpp>
 
+#include "MeepBot_LuaBindings.h"
+
 #include <ctime>
 #include <cerrno>
 #include <cstring>
@@ -26,6 +28,9 @@ const char* SCRIPTS_DIR = "scripts";
 const char RED = 92;
 const char GREEN = 0;
 const char BLUE = 168;
+
+/* default level for users the bot hasn't seen before */
+const AccessLevel DEFAULT_ACCESS_LEVEL = LEVEL_OP;
 
 MeepBot::MeepBot()
 {
@@ -87,7 +92,7 @@ bool MeepBot::OpenLua( std::string &err )
 	/* initialize the internal Lua state and run all our scripts */
 	L = LuaUtil::Open();
 
-	Register( L );
+	MeepBot_LuaBindings::Register( L );
 
 	if( !LuaUtil::RunScriptsFromDir(L, SCRIPTS_DIR) )
 	{
@@ -155,6 +160,8 @@ void MeepBot::Logout()
 {
 	if( m_bLoggedIn )
 		Write( ChatPacket(USER_PART, BLANK, BLANK) );
+
+	m_bLoggedIn = false;
 }
 		
 void MeepBot::MainLoop()
@@ -196,12 +203,31 @@ void MeepBot::HandlePacket( const char *data )
 	switch( code )
 	{
 	case USER_LIST:
+	case USER_JOIN:
 		if( user == BLANK )
 			break;
 
-		/* fall through */
-	case USER_JOIN:
 		m_UserList.Add( user );
+
+		/* figure out this user's rank and add them to the bot */
+		{
+			unsigned pos = msg.find_first_of('|') + 1;
+
+			const char *admin_ranks = "AC";
+			const char *mod_ranks = "cbf!";
+			AccessLevel level = DEFAULT_ACCESS_LEVEL;
+
+			for( unsigned i = 0; i < strlen(admin_ranks); ++i )
+				if( msg[pos] == admin_ranks[i] )
+					level = LEVEL_ADMIN;
+
+			for( unsigned i = 0; i < strlen(mod_ranks); ++i )
+				if( msg[pos] == mod_ranks[i] )
+					level = LEVEL_MOD;
+
+			UserEntry entry( "", level, false );
+			m_pUserDB->SetUserEntry( user.c_str(), entry );
+		}
 		break;
 	case USER_PART:
 		m_UserList.Remove( user );
@@ -234,7 +260,7 @@ void MeepBot::HandlePacket( const char *data )
 			if( pos != string::npos && pos+1 < msg.length() )
 				param = msg.substr( pos+1 );
 
-			Command( L, code, cmd.c_str(), user.c_str(), param.c_str() );
+			MeepBot_LuaBindings::Command( L, code, cmd.c_str(), user.c_str(), param.c_str() );
 		}
 		else if( code == ROOM_MESSAGE )
 		{
@@ -304,377 +330,4 @@ int MeepBot::Write( const ChatPacket &packet )
 	}
 
 	return ret;
-}
-	
-/*
- * Lua binding code
- */
-
-static int Say( lua_State *L )
-{
-	if( lua_isstring(L, -1) )
-		BOT->Say( lua_tostring(L, -1) );
-	else
-		printf( "couldn't say: not a string\n" );
-
-	return 0;
-}
-
-static int Emote( lua_State *L )
-{
-	if( lua_isstring(L, -1) )
-		BOT->Emote( lua_tostring(L, -1) );
-	else
-		printf( "couldn't emote: not a string\n" );
-
-	return 0;
-}
-
-static int PM( lua_State *L )
-{
-	const char *name = lua_tostring( L, -2 );
-	const char *msg = lua_tostring( L, -1 );
-
-	if( name == NULL || msg == NULL )
-	{
-		printf( "no PM for you\n" );
-		return 0;
-	}
-
-	BOT->PM( name, msg );
-	return 0;
-}
-
-static int Rand( lua_State *L )
-{
-	unsigned ret = BOT->m_pISAAC->GetValue();
-
-	if( lua_isnumber(L, -1) )
-		ret %= unsigned( lua_tonumber(L, -1) );
-
-	// Lua is one indexed, so offset from 0..n-1 to 1..n
-	lua_pushnumber( L, ret + 1 );
-
-	return 1;
-}
-
-static int Resolve( lua_State *L )
-{
-	const char *caller = lua_tostring( L, -2 );
-	const char *pattern = lua_tostring( L, -1 );
-
-	if( !caller || !pattern )
-	{
-		lua_pushnil( L );
-		return 1;
-	}
-
-	lua_pushstring( L, BOT->m_UserList.Resolve(caller, pattern).c_str() );
-	return 1;
-}
-
-static int AddQuote( lua_State *L )
-{
-	const char *adder = lua_tostring( L, -2 );
-	const char *quote = lua_tostring( L, -1 );
-
-	if( adder == NULL || quote == NULL )
-	{
-		lua_pushboolean( L, 0 );
-		return 1;
-	}
-
-	lua_pushboolean( L, BOT->m_pQuotesDB->AddQuote(adder, quote) );
-	return 1;
-}
-
-static int GetRandomQuoteID( lua_State *L )
-{
-	int idx = BOT->m_pQuotesDB->GetRandomID();
-
-	if( idx > 0 )
-		lua_pushnumber( L, idx );
-	else
-		lua_pushnil( L );
-
-	return 1;
-}
-
-static int GetQuoteIDByPattern( lua_State *L )
-{
-	if( !lua_isstring(L, -1) )
-	{
-		lua_pushnil( L );
-		return 1;
-	}
-
-	const char *pattern = lua_tostring(L, -1);
-
-	int idx = BOT->m_pQuotesDB->GetIDByPattern( pattern );
-
-	if( idx > 0 )
-		lua_pushnumber( L, idx );
-	else
-		lua_pushnil( L );
-
-	return 1;
-}
-
-static int GetQuoteByID( lua_State *L )
-{
-	if( !lua_isnumber(L, -1) )
-	{
-		lua_pushnil( L );
-		return 1;
-	}
-
-	int idx = int( lua_tonumber(L,-1) );
-
-	/* GetQuote allocates 'quote' - lua_tostring copies, then we delete */
-	{
-		const char *quote = BOT->m_pQuotesDB->GetQuoteByID( idx );
-
-		if( quote )
-			lua_pushstring( L, quote );
-		else
-			lua_pushnil( L );
-
-		delete[] quote;
-	}
-
-	return 1;
-}
-
-static int RemoveQuote( lua_State *L )
-{
-	if( !lua_isnumber(L, -1) )
-	{
-		lua_pushboolean( L, 0 );
-		return 1;
-	}
-
-	/* currently, we don't have a way to tell if a quote was
-	 * actually deleted. just return true if we didn't bork. */
-
-	int idx = int( lua_tonumber(L,-1) );
-	BOT->m_pQuotesDB->RemoveQuote( idx );
-
-	lua_pushboolean( L, 1 );
-
-	return true;
-}
-
-static int GetQuoteAuthor( lua_State *L )
-{
-	if( !lua_isnumber(L,-1) )
-	{
-		lua_pushnil( L );
-		return 1;
-	}
-
-	int idx = (int)lua_tonumber(L, -1);
-
-	/* 'author' is allocated in GetQuoteAuthor, we delete[] it here. */
-	{
-		const char *author = BOT->m_pQuotesDB->GetQuoteAuthor( idx );
-
-		if( author )
-			lua_pushstring( L, author );
-		else
-			lua_pushnil( L );
-
-		delete[] author;
-	}
-
-	return 1;
-}
-
-static const luaL_reg bot_funcs[] =
-{
-	/* chat message functions */
-	{ "Say",	Say },
-	{ "Emote",	Emote },
-	{ "PM",		PM },
-
-	/* script utility functions */
-	{ "Rand",	Rand },
-	{ "Resolve",	Resolve },
-
-	/* quote functions */
-	{ "AddQuote",		AddQuote },
-	{ "GetQuoteByID",	GetQuoteByID },
-	{ "RemoveQuote",	RemoveQuote },
-	{ "GetQuoteAuthor",	GetQuoteAuthor },
-	{ "GetRandomQuoteID",		GetRandomQuoteID },
-	{ "GetQuoteIDByPattern",	GetQuoteIDByPattern },
-	{ NULL, NULL },
-};
-
-/* temp timing stuff */
-#include <sys/time.h>
-
-uint64_t GetTimeElapsed( struct timeval &start, struct timeval &end )
-{
-	uint64_t ustart = start.tv_sec * 1000000 + start.tv_usec;
-	uint64_t uend = end.tv_sec * 1000000 + end.tv_usec;
-	return uend - ustart;
-}
-
-bool MeepBot::Command( lua_State *L, int type, const char *cmd, const char *caller, const char *params )
-{
-	/* Note: all commands are lowercase at this point. */
-	printf( "Command( %d, %s, %s, %s )\n", type, cmd, caller, params );
-
-	/* HACK: if we get the 'reload' command, re-load all our scripts. */
-	if( strcmp(cmd, "reload") == 0 )
-	{
-		bool bPM = type == USER_PM || StringUtil::CompareNoCase(caller, "Fire_Adept") != 0;
-
-		struct timeval start, end;
-
-		if( bPM )
-			BOT->PM( caller, "Reloading Lua scripts..." );
-		else
-			BOT->Say( "Reloading Lua scripts..." );
-		
-		string err = "";
-		gettimeofday( &start, NULL );
-		bool ret = ReloadLua( err );
-		gettimeofday( &end, NULL );
-
-		string str;
-
-		if( ret )
-		{
-			uint64_t microsec = GetTimeElapsed( start, end );
-			str = StringUtil::Format( "...done. (took %llu usec)", microsec );
-		}
-		else
-		{
-			str = "...failed :(";
-
-			if( type == USER_PM )
-				str += " (" + err + ")";
-		}
-
-		if( bPM )
-			BOT->PM( caller, str.c_str() );
-		else
-			BOT->Say( str.c_str() );
-
-		return ret;
-	}
-
-	if( L == NULL )
-	{
-		BOT->Say( "The Lua broke :( Please fix it and !reload" );
-		return false;
-	}
-
-	lua_getglobal( L, "MeepBot" );
-	lua_pushstring( L, "Commands" );
-	lua_gettable( L, -2 );
-
-	if( !lua_istable(L, -1) )
-	{
-		BOT->Say( "Someone broke my Commands table, and I am most displeased." );
-		BOT->CloseLua();
-		return false;
-	}
-
-	lua_pushstring( L, cmd );
-	lua_gettable( L, -2 );
-
-	if( !lua_isfunction( L, -1) )
-		return false;
-
-	/* run this function with the given info */
-	lua_pushnumber( L, type );
-	lua_pushstring( L, caller );
-
-	/* push the params, or nil if the params string is empty */
-	if( strlen(params) > 0 )
-		lua_pushstring( L, params );
-	else
-		lua_pushnil( L );
-
-	if( lua_pcall( L, 3, 0, 0 ) != 0 )
-	{
-		printf( "Failed to run command \"%s\": %s\n", cmd, lua_tostring(L, -1) );
-		return false;
-	}
-
-	LuaUtil::CleanStack( L );
-	return true;
-}
-
-struct PacketType { MessageCode type; const char *name; };
-
-const struct PacketType LuaPacketTypes[] =
-{
-	{ ROOM_MESSAGE, "TYPE_CHAT" },
-	{ USER_PM,	"TYPE_PM" },
-	{ MOD_CHAT,	"TYPE_MOD_CHAT" },
-
-	/* arbitrary value, iteration sentinel */
-	{ USER_JOIN,	NULL }
-};
-
-static void RegisterTypeGlobals( lua_State *L )
-{
-	/* register some important enumerations into the global namespace.
-	 * the first argument to every command is 'type', the method by 
-	 * which the command was called. */
-	for( unsigned i = 0; true; ++i )
-	{
-		const struct PacketType &t = LuaPacketTypes[i];
-		if( t.name == NULL )
-			break;
-
-		lua_pushnumber( L, t.type );
-		lua_setfield( L, LUA_GLOBALSINDEX, t.name );
-
-		printf( "registered %d -> %s\n", t.type, t.name );
-	}
-}
-
-void MeepBot::Register( lua_State *L ) const
-{
-	/* push MeepBot to the stack */
-	lua_getglobal(L, "MeepBot");
-
-	/* if it already exists, remove and rebuild */
-	if( !lua_isnil(L, -1) )
-	{
-		printf( "MeepBot is not nil, destroying\n" );
-
-		/* set the Commands table nil (to wipe the reference) */
-		lua_pushstring( L, "Commands" );
-		lua_pushnil( L );
-		lua_settable( L, -3 );
-
-		/* pop the MeepBot table reference */
-		lua_pop( L, -1 );
-
-		lua_pushstring( L, "MeepBot" );
-		lua_pushnil( L );
-		lua_settable( L, LUA_GLOBALSINDEX );
-	}
-
-	/* pop the global MeepBot table */
-	lua_pop( L, -1 );
-
-	/* push our functions to the MeepBot table */
-	luaL_register( L, "MeepBot", bot_funcs );
-
-	/* create the Commands sub-table */
-	lua_pushstring( L, "Commands" );
-	lua_newtable( L );
-	lua_settable( L, -3 );
-
-	/* remove the MeepBot table from the stack */
-	lua_pop( L, -1 );
-
-	/* register a few important enums in the global namespace */
-	RegisterTypeGlobals( L );
 }

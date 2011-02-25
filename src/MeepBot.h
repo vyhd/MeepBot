@@ -42,9 +42,6 @@ public:
 	void Emote( const char *msg );
 	void PM( const char *user, const char *msg );
 
-	/* true if the command can be parsed, false if not */
-	bool Command( lua_State *L, int type, const char *cmd, const char *caller, const char *params );
-
 	/* these normally would be private, but Lua needs access to them
 	 * and I don't feel like jumping through hoops to make it pretty */
 	UserList m_UserList;

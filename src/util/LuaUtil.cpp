@@ -5,6 +5,8 @@
 #include "StringUtil.h"
 #include "LuaUtil.h"
 
+using namespace std;
+
 lua_State* LuaUtil::Open()
 {
 	lua_State *L = lua_open();
@@ -94,3 +96,30 @@ bool LuaUtil::RunScriptsFromDir( lua_State *L, const char *path )
 	return bRet;
 }
 
+bool LuaUtil::IsNil( lua_State *L, const char *obj )
+{
+	vector<string> vTables;
+	StringUtil::Split( obj, vTables, '.' );
+
+	for( unsigned i = 0; i < vTables.size(); ++i )
+	{
+		/* start at the global index and work from there */
+		int idx = (i == 0) ? LUA_GLOBALSINDEX : -1;
+		lua_getfield( L, idx, vTables[i].c_str() );
+		printf( "pushed a table (%d)\n", i );
+
+		/* if this is nil, pop every object we pushed and return. */
+		if( lua_isnil(L, -1) )
+		{
+			printf( "nil found, popping %d objects\n", i+1 );
+			lua_pop( L, i+1 );
+			return true;
+		}
+	}
+
+	/* pop every object we pushed and return */
+	printf( "not nil, popping %d objects\n", vTables.size() + 1 );
+	lua_pop( L, vTables.size() + 1 );
+
+	return false;
+}
