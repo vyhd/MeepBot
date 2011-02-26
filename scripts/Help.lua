@@ -1,15 +1,9 @@
 MeepBot.Help["help"] = "Helps us help you help us all."
 
--- no better place for this currently...
-MeepBot.Help["reload"] = "Reloads the bot's Lua scripting. Call it if you like, it's harmless."
-
 local function GetFunctionsSorted()
+	-- create an indexed table and sort it
 	local funcs = { }
-
 	for k,v in pairs(MeepBot.Commands) do funcs[#funcs+1] = k end
-
-	-- this isn't in Lua, but it's a command regardless
-	funcs[#funcs+1] = "reload"
 	table.sort( funcs )
 
 	local ret = funcs[1]
@@ -17,18 +11,30 @@ local function GetFunctionsSorted()
 	return ret .. "."
 end
 
+-- returns a clean version of a param, i.e. no exclamation and lowercase
+local function clean( str )
+	if str:sub(1,1) == "!" then str = str:sub(2) end
+	return str:lower()
+end
+
 MeepBot.Commands["help"] = function( type, caller, params )
-	if not MeepBot.IsEnabled then return end
+	-- only respond via PM if we don't have access
+	if not HasAccess(caller, LEVEL_OP) and type ~= TYPE_PM then return end
 
-	local response = MeepBot.Help[params]
+	local response = nil
 
-	if not params then
+	if params and gettype(params) == "string" then
+		local params_ = clean(params)
+		response = MeepBot.Help[params_]
+
+		if response then
+			response = params .. " - " .. response
+		else
+			response = ("Sorry, no help available for \"%s\"."):format(params)
+		end
+	else
 		response = "Registered commands: " .. GetFunctionsSorted()
 		response = response .. " For info on a specific command, use !help [command]"
-	elseif not response then
-		response = ("Sorry, no help available for \"%s\"."):format(params)
-	else
-		response = "!" .. params .. " - " .. response
 	end
 
 	MeepBot.SayOrPM( type, caller, response )

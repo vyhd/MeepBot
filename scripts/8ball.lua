@@ -1,4 +1,4 @@
-MeepBot.Help["8ball"] = "Ask a question, get an answer."
+MeepBot.Help["8ball"] = "Ask a question, get an answer. (Ops)"
 
 local answers =
 {
@@ -31,14 +31,16 @@ local answers =
 
 
 MeepBot.Commands["8ball"] = function( type, caller, params )
-	if not MeepBot.IsEnabled or not params then return end
 
-	if params:sub(-1, -1) ~= "?" then
+	-- if we don't have access, only respond via PM
+	if not HasAccess(caller, LEVEL_OP) and type ~= TYPE_PM then return end
+
+	if not params or params:sub(-1, -1) ~= "?" then
 		MeepBot.SayOrPM( type, caller, "I need a question." )
 		return
 	end
 
-	local idx = MeepBot.Rand(#answers)
+	local idx = MeepBot.Utils.Rand(#answers)
 	local response = ("%s: %s."):format(caller, answers[idx])
 
 	MeepBot.SayOrPM( type, caller, response )

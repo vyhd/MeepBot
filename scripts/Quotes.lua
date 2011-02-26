@@ -3,47 +3,47 @@ MeepBot.Help["addquote"] = "adds a quote to the quotes database. (Ops)"
 MeepBot.Help["removequote"] = "removes a quote from the database by its ID. (Mods)"
 
 MeepBot.Commands["addquote"] = function( type, caller, params )
-	if not IsMod(caller) then return end
+	if not HasAccess(caller, LEVEL_MOD) then return end
 
-	local response
+	local response = "Oh noes! Quote not added! :("
 
-	if MeepBot.AddQuote(caller, params) then
+	-- TODO: give the ID of the quote number.
+	if MeepBot.Quotes.Add(caller, params) then
 		response = "Quote added."
-	else
-		response = "Oh noes! Quote not added! :("
 	end
 
 	MeepBot.SayOrPM( type, caller, response )
 end
 
 MeepBot.Commands["removequote"] = function( type, caller, params )
-	if not IsMod(caller) then return end
+	if not HasAccess(caller, LEVEL_MOD) then return end
 
-	local id = tonumber(params)
-	if not id then return end
+	local _, _, id = params:find( "#(%d+)" )
 
-	local author = MeepBot.GetQuoteAuthor( id )
+	local author = nil
+	if id then author = MeepBot.Quotes.GetAuthor(id) end
 
 	if not author then
 		MeepBot.SayOrPM( type, caller, "That quote doesn't exist!" )
 		return
 	end
 
-	local msg = ("Quote #%d was added by %s."):format(id, author)
-	msg = msg .. " Maybe you should smite them?"
+	local msg = ("Quote #%d removed. It was added by %s;"):format(id, author)
+	msg = msg .. " maybe you should smite them?"
 
-	MeepBot.RemoveQuote( id )
+	MeepBot.Quotes.Remove( id )
 	MeepBot.SayOrPM( type, caller, msg )
 end
 	
 MeepBot.Commands["quote"] = function( type, caller, params )
-	if not MeepBot.IsEnabled then return end
+	-- if we don't have access, only respond via PM
+	if not HasAccess(caller, LEVEL_OP) and type ~= TYPE_PM then return end
 
 	local paramtype = gettype(params)
 	local _, id, id_to_try, response
 
 	if paramtype ~= "string" then
-		id = MeepBot.GetRandomQuoteID()
+		id = MeepBot.Quotes.GetRandomID()
 	else
 		-- HACK: if the param is "me", replace params with the caller's name
 		if params:lower() == "me" then params = caller end
@@ -52,10 +52,10 @@ MeepBot.Commands["quote"] = function( type, caller, params )
 		local _, _, id_to_try = params:find( "#(%d+)" )
 
 		-- is the passed ID valid (i.e. does it map to a quote)?
-		if id_to_try and MeepBot.GetQuoteByID(id_to_try) then
+		if id_to_try and MeepBot.Quotes.GetByID(id_to_try) then
 			id = id_to_try
 		else
-			id = MeepBot.GetQuoteIDByPattern( params )
+			id = MeepBot.Quotes.GetIDByPattern( params )
 		end
 	end
 
@@ -63,7 +63,7 @@ MeepBot.Commands["quote"] = function( type, caller, params )
 	-- will be the ID for that quote. If 'id' is nil, we have no match.
 
 	if id then
-		local quote = MeepBot.GetQuoteByID( id )
+		local quote = MeepBot.Quotes.GetByID( id )
 		response = "#" .. id .. ": " .. quote
 	else
 		-- if we have no params, returning a random value failed,

@@ -1,3 +1,5 @@
+MeepBot.Help["fling"] = "flings a random object at username. (Ops)"
+
 local objects =
 {
 	"a desk lamp",
@@ -46,12 +48,12 @@ local objects =
 }
 
 MeepBot.Commands["fling"] = function( type, caller, params )
-	if not MeepBot.IsEnabled then return end
-	if type ~= TYPE_CHAT then return end
+	-- only take commands in the public chat
+	if not HasAccess(caller, LEVEL_OP) or type ~= TYPE_CHAT then return end
 
-	local idx = MeepBot.Rand( #objects )
-	local target = MeepBot.Resolve( caller, params )
+	local idx = MeepBot.Utils.Rand( #objects )
+	local target = MeepBot.Utils.Resolve( caller, params )
 
-	local msg = ("flings %s at %s"):format( objects[idx], target )
-	MeepBot.Emote( msg )
+	local msg = ("*flings %s at %s*"):format( objects[idx], target )
+	MeepBot.Say( msg )
 end
