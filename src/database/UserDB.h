@@ -20,12 +20,13 @@ enum AccessLevel
 struct UserEntry
 {
 	UserEntry() { }
-	UserEntry( std::string desc_, AccessLevel level_, bool locked_ ) :
-		desc( desc_ ), level( level_ ), locked( locked_ ) { }
+	UserEntry( std::string desc_, AccessLevel level_, bool locked_, int warnings_ ) :
+		desc( desc_ ), level( level_ ), locked( locked_ ), warnings( warnings_ ) { }
 
 	std::string desc;
 	AccessLevel level;
 	bool locked;
+	int warnings;
 };
 
 class UserDB
@@ -33,8 +34,12 @@ class UserDB
 public:
 	UserDB( sqlite3 *db );
 
-	bool AddUser( const char *name, const char *desc, AccessLevel level );
+	bool AddUser( const char *name, AccessLevel level );
 	bool HasUser( const char *name ) const;
+
+	/* bProtect = whether to protect the user's rank or not */
+	bool Protect( const char *name, bool bProtect );
+	bool IsProtected( const char *name ) const;
 
 	AccessLevel GetAccessLevel( const char *username ) const;
 	bool SetAccessLevel( const char *username, AccessLevel level );
@@ -42,8 +47,8 @@ public:
 	std::string GetDescription( const char *username ) const;
 	bool SetDescription( const char *name, const char *desc );
 
-	/* bProtect = whether to protect the user's rank or not */
-	bool Protect( bool bProtect );
+	int GetWarnings( const char *name ) const;
+	bool SetWarnings( const char *name, int warnings );
 
 	/* returns true if 'entry' could be filled with the user data */
 	bool GetUserEntry( const char *name, UserEntry &entry ) const;
