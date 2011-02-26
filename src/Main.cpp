@@ -79,7 +79,7 @@ int main()
 
 	unsigned wait_length = 1;
 
-	while( true )
+	while( exit_lock < 1 )
 	{
 		if( wait_length != 1 )
 		{

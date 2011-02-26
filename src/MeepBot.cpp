@@ -225,8 +225,7 @@ void MeepBot::HandlePacket( const char *data )
 				if( msg[pos] == mod_ranks[i] )
 					level = LEVEL_MOD;
 
-			UserEntry entry( "", level, false );
-			m_pUserDB->SetUserEntry( user.c_str(), entry );
+			m_pUserDB->AddUser( user.c_str(), level );
 		}
 		break;
 	case USER_PART:

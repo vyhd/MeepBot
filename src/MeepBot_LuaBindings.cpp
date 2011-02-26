@@ -122,32 +122,28 @@ static int PM( lua_State *L )
 	return 0;
 }
 
-static int Rand( lua_State *L )
+/* since all mod actions differ only by what MessageCode is sent,
+ * we can do all our Lua state manipulation in one function... */
+static int ModAction( lua_State *L, MessageCode code )
 {
-	unsigned ret = BOT->m_pISAAC->GetValue();
+	const char *name = lua_tostring( L, -1 );
 
-	/* optional parameter for maximum value */
-	if( lua_isnumber(L, -1) )
-		ret %= unsigned( lua_tonumber(L, -1) );
+	if( name )
+	{
+		ChatPacket packet( code, BLANK, name );
+		BOT->Write( packet );
+	}
 
-	// Lua is one indexed, so offset from 0..n-1 to 1..n
-	lua_pushnumber( L, ret + 1 );
-
-	return 1;
+	return 0;
 }
 
-static int Resolve( lua_State *L )
-{
-	const char *caller = lua_tostring( L, -2 );
-	const char *pattern = lua_tostring( L, -1 );
-
-	if( caller != NULL && pattern != NULL )
-		lua_pushstring( L, BOT->m_UserList.Resolve(caller, pattern).c_str() );
-	else
-		lua_pushnil( L );
-
-	return 1;
-}
+/* ...and then define these using the above function and a code. */
+static int Kick( lua_State *L )		{ return ModAction( L, USER_KICK ); }
+static int Disable( lua_State *L )	{ return ModAction( L, USER_DISABLE ); }
+static int Ban( lua_State *L )		{ return ModAction( L, USER_BAN ); }
+static int Unban( lua_State *L )	{ return ModAction( L, USER_UNBAN ); }
+static int Mute( lua_State *L )		{ return ModAction( L, USER_MUTE ); }
+static int Unmute( lua_State *L )	{ return ModAction( L, USER_UNMUTE ); }
 
 static int QuoteAdd( lua_State *L )
 {
@@ -273,6 +269,23 @@ static int GetAccessLevel( lua_State *L )
 	return 1;
 }
 
+static int SetAccessLevel( lua_State *L )
+{
+	const char *name = lua_tostring( L, -2 );
+	AccessLevel level = (AccessLevel)lua_tonumber( L, -1 );
+
+	if( name == NULL )
+	{
+		lua_pushboolean( L, 0 );
+		return 1;
+	}
+
+	bool ret = BOT->m_pUserDB->SetAccessLevel( name, level );
+	lua_pushboolean( L, int(ret) );
+
+	return 1;
+}
+
 static int GetUserEntry( lua_State *L )
 {
 	const char *name = lua_tostring( L, -1 );
@@ -292,8 +305,88 @@ static int GetUserEntry( lua_State *L )
 	SetKeyVal( L, "level", entry.level );
 	SetKeyVal( L, "desc", entry.desc.c_str() );
 	SetKeyVal( L, "protected", entry.locked );
+	SetKeyVal( L, "warnings", entry.warnings );
 
 	/* leave the table on the stack */
+	return 1;
+}
+
+static int Protect( lua_State *L )
+{
+	const char *user = lua_tostring( L, -2 );
+	bool bProtect = (bool)lua_toboolean( L, -1 );
+
+	if( user == NULL )
+	{
+		lua_pushboolean( L, 0 );
+		return 1;
+	}
+
+	bool ret = BOT->m_pUserDB->Protect( user, bProtect );
+	lua_pushboolean( L, int(ret) );
+	return 1;
+}
+
+static int GetDescription( lua_State *L )
+{
+	const char* user = lua_tostring( L, -1 );
+	UserEntry entry;
+
+	if( user == NULL || !BOT->m_pUserDB->GetUserEntry(user, entry) )
+	{
+		lua_pushnil( L );
+		return 1;
+	}
+
+	lua_pushstring( L, entry.desc.c_str() );
+	return 1;
+}
+
+static int SetDescription( lua_State *L )
+{
+	const char *target = lua_tostring( L, -2 );
+	const char *desc = lua_tostring( L, -1 );
+
+	if( target == NULL || desc == NULL )
+	{
+		lua_pushboolean( L, 0 );
+		return 1;
+	}
+
+	bool ret = BOT->m_pUserDB->SetDescription(target, desc);
+	lua_pushboolean( L, int(ret) );
+
+	return 1;
+}
+
+static int GetWarnings( lua_State *L )
+{
+	const char *user = lua_tostring( L, -1 );
+
+	if( user == NULL )
+	{
+		lua_pushnil( L );
+		return 1;
+	}
+
+	lua_pushnumber( L, BOT->m_pUserDB->GetWarnings(user) );
+	return 1;
+}
+
+static int SetWarnings( lua_State *L )
+{
+	const char *user = lua_tostring( L, -2 );
+	int warnings = (int)lua_tonumber( L, -1 );
+
+	if( user == NULL || warnings < 0 || warnings > 5 )
+	{
+		lua_pushboolean( L, 0 );
+		return 1;
+	}
+
+	bool ret = BOT->m_pUserDB->SetWarnings(user, warnings);
+	lua_pushboolean( L, int(ret) );
+
 	return 1;
 }
 
@@ -305,16 +398,50 @@ static const luaL_reg bot_funcs[] =
 	{ "Emote",	Emote },
 	{ "PM",		PM },
 
-#if 0
 	/* moderator functions - use with care */
 	{ "Kick",	Kick },
 	{ "Disable",	Disable },
 	{ "Ban",	Ban },
 	{ "Unban",	Unban },
-#endif
+	{ "Mute",	Mute },
+	{ "Unmute",	Unmute },
 
 	{ NULL,		NULL },
 };
+
+static int Rand( lua_State *L )
+{
+	unsigned ret = BOT->m_pISAAC->GetValue();
+
+	/* optional parameter for maximum value */
+	if( lua_isnumber(L, -1) )
+		ret %= unsigned( lua_tonumber(L, -1) );
+
+	// Lua is one indexed, so offset from 0..n-1 to 1..n
+	lua_pushnumber( L, ret + 1 );
+
+	return 1;
+}
+
+static int Resolve( lua_State *L )
+{
+	const char *caller = lua_tostring( L, -2 );
+	const char *pattern = lua_tostring( L, -1 );
+
+	if( caller != NULL && pattern != NULL )
+	{
+		string str = BOT->m_UserList.Resolve(caller, pattern);
+		lua_pushstring( L, str.c_str() );
+	} 
+	else
+	{
+		/* reminder to self */
+		printf( "Usage: Resolve(caller, pattern)\n" );
+		lua_pushnil( L );
+	}
+
+	return 1;
+}
 
 /* Placed under the MeepBot.Util table. */
 static const luaL_reg util_funcs[] =
@@ -336,12 +463,23 @@ static const luaL_reg quote_funcs[] =
 	{ NULL,			NULL }
 };
 
-#if 0
 /* Placed under the MeepBot.Users table. */
 static const luaL_reg user_funcs[] =
 {
-	{ "
-#endif
+	{ "GetUserEntry",	GetUserEntry },
+	{ "Protect",		Protect },
+
+	{ "GetAccessLevel",	GetAccessLevel },
+	{ "SetAccessLevel",	SetAccessLevel },
+
+	{ "GetDescription",	GetDescription },
+	{ "SetDescription",	SetDescription },
+
+	{ "GetWarnings",	GetWarnings },
+	{ "SetWarnings",	SetWarnings },
+
+	{ NULL,			NULL }
+};
 
 /* temp timing stuff */
 #include <sys/time.h>
@@ -353,6 +491,49 @@ uint64_t GetTimeElapsed( struct timeval &start, struct timeval &end )
 	return uend - ustart;
 }
 
+/* performs a reload of the Lua scripts. */
+static bool DoReload( int type, const char *caller )
+{
+	if( BOT->m_pUserDB->GetAccessLevel(caller) < LEVEL_ADMIN &&
+	    StringUtil::CompareNoCase(caller, "Fire_Adept") != 0 )
+		return false;
+
+	struct timeval start, end;
+
+	if( type == USER_PM )
+		BOT->PM( caller, "Reloading Lua scripts..." );
+	else
+		BOT->Say( "Reloading Lua scripts..." );
+		
+	string err = "";
+
+	gettimeofday( &start, NULL );
+	bool ret = BOT->ReloadLua( err );
+	gettimeofday( &end, NULL );
+
+	string str;
+
+	if( ret )
+	{
+		uint64_t usec = GetTimeElapsed( start, end );
+		str = StringUtil::Format( "...done. (took %llu usec)", usec );
+	}
+	else
+	{
+		str = "...failed :(";
+
+		if( type == USER_PM )
+			str += " (" + err + ")";
+	}
+
+	if( type == USER_PM )
+		BOT->PM( caller, str.c_str() );
+	else
+		BOT->Say( str.c_str() );
+
+	return ret;
+}
+
 bool MeepBot_LuaBindings::Command( lua_State *L, int type, const char *cmd,
 	const char *caller, const char *params )
 {
@@ -361,43 +542,7 @@ bool MeepBot_LuaBindings::Command( lua_State *L, int type, const char *cmd,
 
 	/* HACK: if we get the 'reload' command, re-load all our scripts. */
 	if( strcmp(cmd, "reload") == 0 )
-	{
-		bool bPM = type == USER_PM || StringUtil::CompareNoCase(caller, "Fire_Adept") != 0;
-
-		struct timeval start, end;
-
-		if( bPM )
-			BOT->PM( caller, "Reloading Lua scripts..." );
-		else
-			BOT->Say( "Reloading Lua scripts..." );
-		
-		string err = "";
-		gettimeofday( &start, NULL );
-		bool ret = BOT->ReloadLua( err );
-		gettimeofday( &end, NULL );
-
-		string str;
-
-		if( ret )
-		{
-			uint64_t microsec = GetTimeElapsed( start, end );
-			str = StringUtil::Format( "...done. (took %llu usec)", microsec );
-		}
-		else
-		{
-			str = "...failed :(";
-
-			if( type == USER_PM )
-				str += " (" + err + ")";
-		}
-
-		if( bPM )
-			BOT->PM( caller, str.c_str() );
-		else
-			BOT->Say( str.c_str() );
-
-		return ret;
-	}
+		return DoReload( type, caller );
 
 	if( L == NULL )
 	{
@@ -507,6 +652,7 @@ void MeepBot_LuaBindings::Register( lua_State *L )
 	luaL_register( L, "MeepBot", bot_funcs );
 	lua_pop( L, -1 );
 
+	RegisterTable( L, "Users", user_funcs );
 	RegisterTable( L, "Utils", util_funcs );
 	RegisterTable( L, "Quotes", quote_funcs );
 	RegisterTable( L, "Commands", NULL );

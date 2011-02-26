@@ -44,6 +44,9 @@ public:
 
 	/* these normally would be private, but Lua needs access to them
 	 * and I don't feel like jumping through hoops to make it pretty */
+
+	int Write( const ChatPacket &packet );
+
 	UserList m_UserList;
 	ISAAC *m_pISAAC;
 
@@ -60,7 +63,6 @@ private:
 	bool m_bLoggedIn;
 
 	int Read();
-	int Write( const ChatPacket &packet );
 	static const unsigned BUFFER_SIZE = 4096;
 	char m_sReadBuffer[BUFFER_SIZE];
 
