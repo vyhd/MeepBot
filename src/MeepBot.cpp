@@ -171,7 +171,7 @@ void MeepBot::MainLoop()
 		/* this waits on network I/O, so we sleep between reads. */
 		int len = Read();
 
-		if( len == -1 )
+		if( len == -1 || len == 0 )
 			break;
 
 		m_sReadBuffer[len] = '\0';
@@ -229,6 +229,16 @@ void MeepBot::HandlePacket( const char *data )
 		}
 		break;
 	case USER_PART:
+	case USER_KICK:
+	case USER_DISABLE:
+	case USER_BAN:
+	case IDLE_KICK:
+		if( user == "MeepBot" )
+		{
+			printf( "we got lost (code %d)!\n", code );
+			m_bLoggedIn = false;
+		}
+
 		m_UserList.Remove( user );
 		break;
 	case USER_MUTE:
