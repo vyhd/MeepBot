@@ -17,42 +17,6 @@
 #include <string>
 using namespace std;
 
-/* simple helper functions */
-
-void SetKeyVal( lua_State *L, const char *key, int val, int idx = -3 )
-{
-	lua_pushstring( L, key );
-	lua_pushnumber( L, val );
-	lua_settable( L, idx );
-} 
-
-void SetKeyVal( lua_State *L, const char *key, bool val, int idx = -3 )
-{
-	lua_pushstring( L, key );
-	lua_pushboolean( L, int(val) );
-	lua_settable( L, idx );
-}
-
-void SetKeyVal( lua_State *L, const char *key, const char *val, int idx = -3 )
-{
-	lua_pushstring( L, key );
-	lua_pushstring( L, val );
-	lua_settable( L, idx );
-}
-
-void SetKeyVal( lua_State *L, const char *key, const string &val, int idx = -3 )
-{
-	return SetKeyVal( L, key, val.c_str(), idx );
-}
-
-/* sets a given key to nil. */
-void SetKeyNil( lua_State *L, const char *key, int idx = -3 )
-{
-	lua_pushstring( L, key );
-	lua_pushnil( L );
-	lua_settable( L, idx );
-}
-
 struct PacketType { MessageCode value; const char *name; };
 
 const struct PacketType LuaPacketTypes[] =
@@ -307,11 +271,11 @@ static int GetUserEntry( lua_State *L )
 	lua_newtable( L );
 
 	/* push the UserEntry's key-value pairs to the table */
-	SetKeyVal( L, "level", entry.level );
-	SetKeyVal( L, "desc", entry.desc );
-	SetKeyVal( L, "protected", entry.locked );
-	SetKeyVal( L, "warnings", entry.warnings );
-	SetKeyVal( L, "mask", entry.mask );
+	LuaUtil::SetKeyVal( L, "level", entry.level );
+	LuaUtil::SetKeyVal( L, "desc", entry.desc.c_str() );
+	LuaUtil::SetKeyVal( L, "protected", entry.locked );
+	LuaUtil::SetKeyVal( L, "warnings", entry.warnings );
+	LuaUtil::SetKeyVal( L, "mask", entry.mask.c_str() );
 
 	/* leave the table on the stack */
 	return 1;
@@ -637,7 +601,7 @@ static void RegisterTable( lua_State *L, const char *name, const luaL_Reg *reg )
 	lua_pop( L, -1 );
 
 	/* kill the global reference */
-	SetKeyNil( L, name, LUA_GLOBALSINDEX );
+	LuaUtil::SetKeyNil( L, name, LUA_GLOBALSINDEX );
 
 	assert( lua_gettop(L) == 0 );
 }
@@ -652,7 +616,7 @@ void MeepBot_LuaBindings::Register( lua_State *L )
 	lua_pop( L, -1 );
 
 	if( !bIsNil )
-		SetKeyNil( L, "MeepBot", LUA_GLOBALSINDEX );
+		LuaUtil::SetKeyNil( L, "MeepBot", LUA_GLOBALSINDEX );
 
 	/* register MeepBot, then register its subtables */
 	luaL_register( L, "MeepBot", bot_funcs );

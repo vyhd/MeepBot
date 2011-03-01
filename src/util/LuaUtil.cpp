@@ -96,30 +96,31 @@ bool LuaUtil::RunScriptsFromDir( lua_State *L, const char *path )
 	return bRet;
 }
 
-bool LuaUtil::IsNil( lua_State *L, const char *obj )
+void LuaUtil::SetKeyVal( lua_State *L, const char *key, int val, int idx )
 {
-	vector<string> vTables;
-	StringUtil::Split( obj, vTables, '.' );
+	lua_pushstring( L, key );
+	lua_pushnumber( L, val );
+	lua_settable( L, idx );
+} 
 
-	for( unsigned i = 0; i < vTables.size(); ++i )
-	{
-		/* start at the global index and work from there */
-		int idx = (i == 0) ? LUA_GLOBALSINDEX : -1;
-		lua_getfield( L, idx, vTables[i].c_str() );
-		printf( "pushed a table (%d)\n", i );
+void LuaUtil::SetKeyVal( lua_State *L, const char *key, bool val, int idx )
+{
+	lua_pushstring( L, key );
+	lua_pushboolean( L, int(val) );
+	lua_settable( L, idx );
+}
 
-		/* if this is nil, pop every object we pushed and return. */
-		if( lua_isnil(L, -1) )
-		{
-			printf( "nil found, popping %d objects\n", i+1 );
-			lua_pop( L, i+1 );
-			return true;
-		}
-	}
+void LuaUtil::SetKeyVal( lua_State *L, const char *key, const char *val, int idx )
+{
+	lua_pushstring( L, key );
+	lua_pushstring( L, val );
+	lua_settable( L, idx );
+}
 
-	/* pop every object we pushed and return */
-	printf( "not nil, popping %d objects\n", vTables.size() + 1 );
-	lua_pop( L, vTables.size() + 1 );
-
-	return false;
+/* sets a given key to nil. */
+void LuaUtil::SetKeyNil( lua_State *L, const char *key, int idx )
+{
+	lua_pushstring( L, key );
+	lua_pushnil( L );
+	lua_settable( L, idx );
 }
