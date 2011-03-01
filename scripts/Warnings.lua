@@ -25,15 +25,23 @@ MeepBot.Commands["warn"] = function( type, caller, params )
 		return
 	end
 
-	local warnings = MeepBot.Users.GetWarnings(target) + 1
+	local warnings = MeepBot.Users.GetWarnings(target)
+
+	if warnings >= MAX_WARNINGS then
+		response = ("%s already has %d warnings!"):format(target, warnings)
+		MeepBot.SayOrPM( type, caller, response )
+		return
+	end
+
+	warnings = warnings + 1
 	MeepBot.Users.SetWarnings(target, warnings)
 
-	response = ("%s warned. (%d/%d)"):format(target, warnings,MAX_WARNINGS)
+	response = ("%s warned. (%d/%d)"):format(target, warnings, MAX_WARNINGS)
 
 	-- if we've hit the warning limit, demote them
 	if warnings >= MAX_WARNINGS then
 		response = response .. " -  " .. target
-		response = " is no longer allowed to use the bot."
+		response = response ..  " is no longer allowed to use the bot."
 
 		MeepBot.Users.SetDescription( target, "" )
 		MeepBot.Users.SetAccessLevel( target, LEVEL_BANNED )
@@ -43,10 +51,10 @@ MeepBot.Commands["warn"] = function( type, caller, params )
 	MeepBot.SayOrPM( type, caller, response )
 end
 
-MeepBot.Help["unwarn"] = "removes a warning from a user. (Mods)"
+MeepBot.Help["unwarn"] = "removes all warnings from a user. (Admins)"
 
 MeepBot.Commands["unwarn"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_MOD) then return end
+	if not HasAccess(caller, LEVEL_ADMIN) then return end
 
 	if not params then
 		MeepBot.SayOrPM( type, caller, "Usage: !unwarn [username]" )
@@ -54,22 +62,15 @@ MeepBot.Commands["unwarn"] = function( type, caller, params )
 	end
 
 	local target = MeepBot.Utils.Resolve( caller, params )
-	local entry = MeepBot.Users.GetUserEntry( target )
 
 	local response = nil
+	local entry = MeepBot.Users.GetUserEntry(target)
 
 	if not entry then
 		response = "That user doesn't exist!"
-	elseif entry.protected then
-		response = ("%s is protected. How about asking an admin very nicely to !unprotect them?"):format(target)
 	else
-		local warnings = MeepBot.Users.GetWarnings(target) - 1
-		if warnings < 0 then
-			response = ("%s already has 0 warnings!"):format(target)
-		else
-			MeepBot.Users.SetWarnings(target, warnings)
-			response = ("%s now has %d/%d warnings."):format(target, warnings, MAX_WARNINGS)
-		end
+		MeepBot.Users.SetWarnings(target, 0)
+		response = ("%s now has no warnings."):format(target)
 	end
 
 	MeepBot.SayOrPM( type, caller, response )
