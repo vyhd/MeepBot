@@ -17,52 +17,6 @@
 #include <string>
 using namespace std;
 
-struct PacketType { MessageCode value; const char *name; };
-
-const struct PacketType LuaPacketTypes[] =
-{
-	{ ROOM_MESSAGE, "TYPE_CHAT" },
-	{ USER_PM,	"TYPE_PM" },
-	{ MOD_CHAT,	"TYPE_MOD_CHAT" },
-
-	/* arbitrary value, iteration sentinel */
-	{ USER_JOIN,	NULL }
-};
-
-struct AccessType { AccessLevel value; const char *name; };
-
-const struct AccessType LuaAccessTypes[] =
-{
-	{ LEVEL_BANNED,	"LEVEL_BANNED" },
-	{ LEVEL_USER,	"LEVEL_USER" },
-	{ LEVEL_OP,	"LEVEL_OP" },
-	{ LEVEL_MOD,	"LEVEL_MOD" },
-	{ LEVEL_ADMIN,	"LEVEL_ADMIN" },
-
-	/* arbitrary value, interation sentinel */
-	{ LEVEL_BANNED,	NULL }
-};
-
-/* Registers a list of enumerations into the global namespace, using a list of
- * structs with enum "value" and const char* "name" respectively. Setting
- * "name" to NULL acts as an iteration-ending sentinel. */
-template<class T>
-static void RegisterTypeGlobals( lua_State *L, const T *array )
-{
-	for( unsigned i = 0; true; ++i )
-	{
-		const T &e = array[i];
-
-		if( e.name == NULL )
-			break;
-
-		lua_pushnumber( L, e.value );
-		lua_setfield( L, LUA_GLOBALSINDEX, e.name );
-
-		printf( "registered %d -> %s\n", e.value, e.name );
-	}
-}
-
 static int Say( lua_State *L )
 {
 	if( lua_isstring(L, -1) )
@@ -606,6 +560,32 @@ static void RegisterTable( lua_State *L, const char *name, const luaL_Reg *reg )
 	assert( lua_gettop(L) == 0 );
 }
 
+struct PacketType { MessageCode value; const char *name; };
+
+const struct PacketType LuaPacketTypes[] =
+{
+	{ ROOM_MESSAGE, "TYPE_CHAT" },
+	{ USER_PM,	"TYPE_PM" },
+	{ MOD_CHAT,	"TYPE_MOD_CHAT" },
+
+	/* arbitrary value, iteration sentinel */
+	{ USER_JOIN,	NULL }
+};
+
+struct AccessType { AccessLevel value; const char *name; };
+
+const struct AccessType LuaAccessTypes[] =
+{
+	{ LEVEL_BANNED,	"LEVEL_BANNED" },
+	{ LEVEL_USER,	"LEVEL_USER" },
+	{ LEVEL_OP,	"LEVEL_OP" },
+	{ LEVEL_MOD,	"LEVEL_MOD" },
+	{ LEVEL_ADMIN,	"LEVEL_ADMIN" },
+
+	/* arbitrary value, interation sentinel */
+	{ LEVEL_BANNED,	NULL }
+};
+
 void MeepBot_LuaBindings::Register( lua_State *L )
 {
 	/* push MeepBot to the stack */
@@ -628,6 +608,6 @@ void MeepBot_LuaBindings::Register( lua_State *L )
 	RegisterTable( L, "Commands", NULL );
 
 	/* register a few important enums in the global namespace */
-	RegisterTypeGlobals( L, LuaPacketTypes );
-	RegisterTypeGlobals( L, LuaAccessTypes );
+	LuaUtil::RegisterGlobalEnum( L, LuaPacketTypes );
+	LuaUtil::RegisterGlobalEnum( L, LuaAccessTypes );
 }

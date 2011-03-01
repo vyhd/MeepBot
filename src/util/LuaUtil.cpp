@@ -96,6 +96,23 @@ bool LuaUtil::RunScriptsFromDir( lua_State *L, const char *path )
 	return bRet;
 }
 
+template<class T>
+static void RegisterGlobalEnum( lua_State *L, const T *array )
+{
+	for( unsigned i = 0; true; ++i )
+	{
+		const T &e = array[i];
+
+		if( e.name == NULL )
+			break;
+
+		lua_pushnumber( L, e.value );
+		lua_setfield( L, LUA_GLOBALSINDEX, e.name );
+
+		printf( "registered %d -> %s\n", e.value, e.name );
+	}
+}
+
 void LuaUtil::SetKeyVal( lua_State *L, const char *key, int val, int idx )
 {
 	lua_pushstring( L, key );
