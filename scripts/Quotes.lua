@@ -18,20 +18,33 @@ end
 MeepBot.Commands["removequote"] = function( type, caller, params )
 	if not HasAccess(caller, LEVEL_MOD) then return end
 
-	local _, _, id = params:find( "#(%d+)" )
+	local _, id = nil, nil
 
-	local author = nil
-	if id then author = MeepBot.Quotes.GetAuthor(id) end
+	if gettype(params) == "string" then
+		_, _, id = params:find( "#(%d+)" )
+	end
+
+	if not params or not id then
+		MeepBot.SayOrPM( type, caller, "Usage: !removeQuote #[id]" )
+		return
+	end
+
+	local author = MeepBot.Quotes.GetAuthor( id )
 
 	if not author then
 		MeepBot.SayOrPM( type, caller, "That quote doesn't exist!" )
 		return
 	end
 
-	local msg = ("Quote #%d removed. It was added by %s;"):format(id, author)
-	msg = msg .. " maybe you should smite them?"
+	local msg = nil
 
-	MeepBot.Quotes.Remove( id )
+	if not MeepBot.Quotes.Remove(id) then
+		msg = "Quote NOT removed! Something terrible has happened :("
+	else
+		msg = ("Quote #%d removed. It was added by %s;"):format(id, author)
+		msg = msg .. " maybe you should smite them?"
+	end
+
 	MeepBot.SayOrPM( type, caller, msg )
 end
 	

@@ -26,6 +26,8 @@ public:
 
 	/* adder = the person whs 'calling' AddQuote. */
 	bool AddQuote( const char *adder, const char *quote );
+
+	/* returns true iff a quote was found and deleted */
 	bool RemoveQuote( int iQuoteID );
 private:
 	sqlite3* m_pDB;

@@ -144,13 +144,9 @@ static int QuoteRemove( lua_State *L )
 		return 1;
 	}
 
-	/* currently, we don't have a way to tell if a quote was
-	 * actually deleted. just return true if we didn't bork. */
-
+	/* this returns true iff a quote was found and deleted. */
 	int idx = int( lua_tonumber(L,-1) );
-	BOT->m_pQuotesDB->RemoveQuote( idx );
-
-	lua_pushboolean( L, 1 );
+	lua_pushboolean( L, BOT->m_pQuotesDB->RemoveQuote(idx) );
 
 	return true;
 }

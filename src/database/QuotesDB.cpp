@@ -157,6 +157,15 @@ bool QuotesDB::AddQuote( const char *adder, const char *quote )
 
 bool QuotesDB::RemoveQuote( int iQuoteID )
 {
+	/* see if the quote exists - return false if not */
+	char *quote = GetQuoteByID( iQuoteID );
+
+	if( quote == NULL )
+		return false;
+
+	/* GetQuoteByID dynamically allocates this char*. */
+	delete[] quote;
+
 	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
 		"DELETE FROM %s WHERE id = %d;",
 		QUOTES_TABLE, iQuoteID
