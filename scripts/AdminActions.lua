@@ -49,3 +49,12 @@ MeepBot.Commands["unprotect"] = function( type, caller, params )
 
 	MeepBot.SayOrPM( type, caller, response )
 end
+
+MeepBot.Commands["setmask"] = function( type, caller, params )
+	if not HasAccess(caller, LEVEL_ADMIN) then return end
+
+	if not params then
+		MeepBot.SayOrPM( type, caller, "Usage: !setMask [user] [mask]" )
+		return
+	end
+end

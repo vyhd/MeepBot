@@ -20,10 +20,10 @@ enum AccessLevel
 struct UserEntry
 {
 	UserEntry() { }
-	UserEntry( std::string desc_, AccessLevel level_, bool locked_, int warnings_ ) :
-		desc( desc_ ), level( level_ ), locked( locked_ ), warnings( warnings_ ) { }
+	UserEntry( std::string desc_, std::string mask_, AccessLevel level_, bool locked_, int warnings_ ) :
+		desc(desc_), mask(mask_), level(level_), locked(locked_), warnings(warnings_) { }
 
-	std::string desc;
+	std::string desc, mask;
 	AccessLevel level;
 	bool locked;
 	int warnings;

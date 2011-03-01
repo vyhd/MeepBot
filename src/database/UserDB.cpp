@@ -12,7 +12,7 @@ UserDB::UserDB( sqlite3* db )
 		"CREATE TABLE IF NOT EXISTS %s("
 		"username TEXT UNIQUE PRIMARY KEY COLLATE NOCASE, "
 		"description TEXT, accessLevel INTEGER, isProtected INTEGER, "
-		"warnings INTEGER);", USER_TABLE );
+		"warnings INTEGER, mask STRING);", USER_TABLE );
 
 	if( sqlite3_step(stmt) != SQLITE_DONE )
 		printf( "error creating table: %s\n", sqlite3_errmsg(m_pDB) );
@@ -23,7 +23,7 @@ UserDB::UserDB( sqlite3* db )
 bool UserDB::AddUser( const char *name, AccessLevel level )
 {
 	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
-		"INSERT OR IGNORE INTO %s VALUES('%q',NULL,%d,0,0);",
+		"INSERT OR IGNORE INTO %s VALUES('%q',NULL,%d,0,0,NULL);",
 		USER_TABLE, name, level );
 
 	if( !stmt )
@@ -110,6 +110,11 @@ bool UserDB::GetUserEntry( const char *name, UserEntry &entry ) const
 		entry.level = (AccessLevel)sqlite3_column_int(stmt, 2);
 		entry.locked = sqlite3_column_int(stmt, 3) != 0;
 		entry.warnings = sqlite3_column_int(stmt, 4);
+
+		const char *mask = (const char*)sqlite3_column_text(stmt, 5);
+		if( mask )
+			entry.mask = mask;
+
 		break;
 		}
 	case SQLITE_DONE:
@@ -138,9 +143,9 @@ bool UserDB::SetUserEntry( const char *name, const UserEntry &entry )
 	sqlite3_stmt *stmt = NULL;
 
 	stmt = SQLite::Prepare( m_pDB,
-		"INSERT OR REPLACE INTO %s VALUES('%q','%q',%d,%d,%d);",
+		"INSERT OR REPLACE INTO %s VALUES('%q','%q',%d,%d,%d, %d);",
 		USER_TABLE, name, entry.desc.c_str(), entry.level, 
-		int(entry.locked), entry.warnings );
+		int(entry.locked), entry.warnings, entry.mask.c_str() );
 
 	if( !stmt )
 		return false;
@@ -206,7 +211,7 @@ bool UserDB::SetDescription( const char *name, const char *desc )
 
 int UserDB::GetWarnings( const char *name ) const
 {
-	/* This is probably somewat wasteful, but much simpler. */
+	/* This is probably somewhat wasteful, but much simpler. */
 	UserEntry entry;
 
 	if( !GetUserEntry(name, entry) )

@@ -26,6 +26,13 @@ void SetKeyVal( lua_State *L, const char *key, int val, int idx = -3 )
 	lua_settable( L, idx );
 } 
 
+void SetKeyVal( lua_State *L, const char *key, bool val, int idx = -3 )
+{
+	lua_pushstring( L, key );
+	lua_pushboolean( L, int(val) );
+	lua_settable( L, idx );
+}
+
 void SetKeyVal( lua_State *L, const char *key, const char *val, int idx = -3 )
 {
 	lua_pushstring( L, key );
@@ -33,11 +40,9 @@ void SetKeyVal( lua_State *L, const char *key, const char *val, int idx = -3 )
 	lua_settable( L, idx );
 }
 
-void SetKeyVal( lua_State *L, const char *key, bool val, int idx = -3 )
+void SetKeyVal( lua_State *L, const char *key, const string &val, int idx = -3 )
 {
-	lua_pushstring( L, key );
-	lua_pushboolean( L, int(val) );
-	lua_settable( L, idx );
+	return SetKeyVal( L, key, val.c_str(), idx );
 }
 
 /* sets a given key to nil. */
@@ -303,9 +308,10 @@ static int GetUserEntry( lua_State *L )
 
 	/* push the UserEntry's key-value pairs to the table */
 	SetKeyVal( L, "level", entry.level );
-	SetKeyVal( L, "desc", entry.desc.c_str() );
+	SetKeyVal( L, "desc", entry.desc );
 	SetKeyVal( L, "protected", entry.locked );
 	SetKeyVal( L, "warnings", entry.warnings );
+	SetKeyVal( L, "mask", entry.mask );
 
 	/* leave the table on the stack */
 	return 1;
