@@ -90,7 +90,7 @@ int Socket::Read( char *buffer, unsigned len, bool bDontWait )
 	if( iRead <= 0 )
 	{
 		// ignore and return as an error
-		if( errno == EAGAIN || errno == EWOULDBLOCK )
+		if( bDontWait && (errno == EAGAIN || errno == EWOULDBLOCK) )
 			return 0;
 
 		printf( "Read( %u, %p, %u, %d ) failed: %i (%s)\n",
