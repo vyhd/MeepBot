@@ -18,6 +18,8 @@ public:
 	int GetRandomID() const;
 	int GetIDByPattern( const char *pattern ) const;
 
+	bool QuoteExists( int iQuoteID ) const;
+
 	/* NULL = no match, otherwise, delete[] when you're finished. */
 	const char* GetQuoteByID( int iQuoteID ) const;
 

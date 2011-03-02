@@ -50,6 +50,22 @@ static const char* GetFirstQuote( sqlite3 *db, sqlite3_stmt *stmt )
 	return ret;
 }
 
+bool QuotesDB::QuoteExists( int iQuoteID ) const
+{
+	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
+		"SELECT quote FROM %s WHERE id = %d;",
+		QUOTES_TABLE, iQuoteID );
+
+	if( !stmt )
+		return false;
+
+	int ret = sqlite3_step( stmt );
+	sqlite3_finalize( stmt );
+
+	/* return true if we got a result */
+	return ret == SQLITE_ROW;
+}
+
 const char* QuotesDB::GetQuoteByID( int iQuoteID ) const
 {
 	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
@@ -129,7 +145,8 @@ int QuotesDB::GetRandomID() const
 
 	int idx = -1;	/* invalid sentinel */
 
-	/* We should have a result here. */
+	if( !stmt )
+		return idx;
 
 	if( sqlite3_step(stmt) == SQLITE_ROW )
 		idx = sqlite3_column_int( stmt, 0 );
@@ -157,14 +174,9 @@ bool QuotesDB::AddQuote( const char *adder, const char *quote )
 
 bool QuotesDB::RemoveQuote( int iQuoteID )
 {
-	/* see if the quote exists - return false if not */
-	char *quote = GetQuoteByID( iQuoteID );
-
-	if( quote == NULL )
+	/* does this quote exist? */
+	if( !QuoteExists(iQuoteID) )
 		return false;
-
-	/* GetQuoteByID dynamically allocates this char*. */
-	delete[] quote;
 
 	sqlite3_stmt *stmt = SQLite::Prepare( m_pDB,
 		"DELETE FROM %s WHERE id = %d;",
