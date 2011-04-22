@@ -142,7 +142,6 @@ bool MeepBot::Login( const char *name, const char *pwd )
 		if( response == ACCESS_GRANTED )
 		{
 			m_bLoggedIn = true;
-			Say( "Greetings, Mortals." );
 
 			/* request a list of currently chatting users */
 			Write( ChatPacket(USER_LIST) );
@@ -171,8 +170,12 @@ void MeepBot::MainLoop()
 		/* this waits on network I/O, so we sleep between reads. */
 		int len = Read();
 
-		if( len == -1 || len == 0 )
+		if( len <= 0 )
+		{
+			printf( "Read: %d, quitting\n", len );
+			m_bLoggedIn = false;
 			break;
+		}
 
 		m_sReadBuffer[len] = '\0';
 
@@ -204,8 +207,30 @@ void MeepBot::HandlePacket( const char *data )
 	{
 	case USER_LIST:
 	case USER_JOIN:
+		/* weird code flow alert: once we have our list, we've 
+		 * finished logging in, so greet everyone here. */
 		if( user == BLANK )
+		{
+			const char *greeting = NULL;
+
+			switch( m_UserList.GetNumUsers() )
+			{
+			/* it's just us */
+			case 1:	
+				greeting = "... :(";
+				break;
+			/* us and one other person */
+			case 2:	
+				greeting = "Greetings, Mortal.";
+				break;
+			default:
+				greeting = "Greetings, Mortals.";
+				break;
+			}
+
+			Say( greeting );
 			break;
+		}
 
 		m_UserList.Add( user );
 
