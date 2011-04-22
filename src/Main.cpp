@@ -3,6 +3,8 @@
 #include <csignal>
 #include <lua5.1/lua.hpp>
 #include "MeepBot.h"
+#include "MeepBot_LuaBindings.h"
+#include "packet/MessageCodes.h"	// for ROOM_MESSAGE in reload
 #include "util/StringUtil.h"
 
 using namespace std;
@@ -11,6 +13,12 @@ using namespace std;
 static MeepBot g_Bot;
 
 static unsigned exit_lock = 0;
+
+/* If we receive SIGHUP, reload scripts (and pretend it's me) */
+void reload_scripts( int signum )
+{
+	MeepBot_LuaBindings::DoReload( ROOM_MESSAGE, "Fire_Adept" );
+}
 
 void clean_exit( int signum )
 {
@@ -54,7 +62,7 @@ char* GetFileContents( const char *path )
 	return ret;
 }
 
-/* we exit cleanly on receiving these signals - 0 to signal end. */
+/* we exit cleanly on receiving these signals - 0 is an ending sentinel. */
 const int signals[] = { SIGABRT, SIGFPE, SIGILL, SIGINT, SIGPIPE, SIGSEGV, SIGTERM, 0 };
 
 int main()
@@ -64,6 +72,9 @@ int main()
 	/* set up our signal handling for cleaner exit */
 	for( unsigned i = 0; signals[i] != 0; ++i )
 		signal( signals[i], clean_exit );
+
+	/* if we receive SIGHUP, reload scripts */
+	signal( SIGHUP, reload_scripts );
 
 	string err;
 	if( !BOT->OpenLua(err) )
