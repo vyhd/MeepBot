@@ -412,7 +412,7 @@ uint64_t GetTimeElapsed( struct timeval &start, struct timeval &end )
 }
 
 /* performs a reload of the Lua scripts. */
-static bool DoReload( int type, const char *caller )
+bool MeepBot_LuaBindings::DoReload( int type, const char *caller )
 {
 	if( BOT->m_pUserDB->GetAccessLevel(caller) < LEVEL_ADMIN &&
 	    StringUtil::CompareNoCase(caller, "Fire_Adept") != 0 )
@@ -454,58 +454,57 @@ static bool DoReload( int type, const char *caller )
 	return ret;
 }
 
-bool MeepBot_LuaBindings::Command( lua_State *L, int type, const char *cmd,
-	const char *caller, const char *params )
+bool MeepBot_LuaBindings::Respond( lua_State *L, int type, const char *user, const char *line )
 {
-	/* Note: all commands are lowercase at this point. */
-	printf( "Command( %d, %s, %s, %s )\n", type, cmd, caller, params );
+	printf( "Respond( %d, %s, %s )\n", type, user, line );
 
 	/* HACK: if we get the 'reload' command, re-load all our scripts. */
-	if( strcmp(cmd, "reload") == 0 )
-		return DoReload( type, caller );
+	if( strcmp(line, "!reload") == 0 )
+		return DoReload( type, user );
 
+	/* This needs to be after DoReload; L will be NULL if the last reload failed. */
 	if( L == NULL )
 	{
-		BOT->Say( "The Lua broke :( Please fix it and !reload" );
+		/* Don't respond to ourself; that'll cause a feedback loop. */
+		if( strcmp(user, "MeepBot") != 0 )
+			BOT->Say( "The Lua broke :( Please fix it and !reload" );
+
 		return false;
 	}
 
 	lua_getglobal( L, "MeepBot" );
-	lua_pushstring( L, "Commands" );
+	lua_pushstring( L, "Respond" );
 	lua_gettable( L, -2 );
 
-	if( !lua_istable(L, -1) )
+	if( !lua_isfunction(L, -1) )
 	{
-		BOT->Say( "Someone broke my Commands table, and I am most displeased." );
+		BOT->Say( "Ph'nglui mglw'nafh Cthulhu R'lyeh wgah'nagl fh'tagn! I'a! I'a!" );
+		printf( "(this means you broke the Respond function; please fix it.)\n" );
 		BOT->CloseLua();
 		return false;
 	}
 
-	lua_pushstring( L, cmd );
-	lua_gettable( L, -2 );
-
-	if( !lua_isfunction( L, -1) )
-		return false;
-
 	/* run this function with the given info */
 	lua_pushnumber( L, type );
-	lua_pushstring( L, caller );
+	lua_pushstring( L, user );
 
 	/* push the params, or nil if the params string is empty */
-	if( strlen(params) > 0 )
-		lua_pushstring( L, params );
+	if( strlen(line) > 0 )
+		lua_pushstring( L, line );
 	else
 		lua_pushnil( L );
 
-	/* Call the command with 3 arguments and 0 results */
+	/* Call Respond with 3 arguments and 0 results */
+	bool bSuccess = true;
+
 	if( lua_pcall( L, 3, 0, 0 ) != 0 )
 	{
-		printf( "Failed to run command \"%s\": %s\n", cmd, lua_tostring(L, -1) );
-		return false;
+		printf( "Failed to execute Respond: %s\n", lua_tostring(L, -1) );
+		bSuccess = false;
 	}
 
 	LuaUtil::CleanStack( L );
-	return true;
+	return bSuccess;
 }
 
 /* UGLY HACK: luaL_register is behaving idiotically with objects on the

@@ -11,6 +11,31 @@
 MeepBot.IsEnabled = true
 
 --
+-- Respond - Lua entry point for lines that the bot sees. We dispatch all
+-- commands from here and, if we're e.g. playing a game, this is where we
+-- redirect input. 'type' is one of TYPE_CHAT, TYPE_PM, or TYPE_MOD_CHAT;
+-- 'user' is who sent 'line'.
+--
+
+-- splits a command into its name and param string
+local function SplitCommand( line )
+	local _, _, cmd, params = line:find("^!(%a+)%s*(.*)$")
+	return cmd, params
+end
+
+function MeepBot.Respond( type, user, line )
+	-- ignore empty strings and commands coming from us
+	if not line or user == "MeepBot" then return end
+
+	-- command dispatch (prefixed with '!')
+	if line:sub(1,1) == "!" then
+		local cmd, params = SplitCommand(line)
+		local response = "cmd: " .. tostring(cmd) .. ", params: " .. tostring(params)
+		MeepBot.SayOrPM( type, user, response )
+	end
+end
+
+--
 -- HasAccess - returns true if the caller has at least 'level' access and
 -- either the bot is enabled, or the caller is at least a moderator.
 -- Preface every command function with this or you will probably suffer.
@@ -48,7 +73,7 @@ MeepBot.Help["me"] = "you're beyond my help, I'm afraid"
 gettype = type
 
 --
--- Publicly says or responds via PM, depending on type and user level
+-- Publicly says or responds via PM, depending on 'type'
 --
 function MeepBot.SayOrPM( type, caller, response )
 	if not MeepBot.IsEnabled then return end
@@ -58,4 +83,11 @@ function MeepBot.SayOrPM( type, caller, response )
 	else
 		MeepBot.Say( response )
 	end
+end
+
+--
+-- given a single param, returns the username and the string components
+--
+function Split( params )
+	return nil, nil
 end

@@ -273,41 +273,7 @@ void MeepBot::HandlePacket( const char *data )
 		break;
 	case ROOM_MESSAGE:
 	case USER_PM:
-		/* ignore commands from ourself */
-		if( user == "MeepBot" )
-			break;
-
-		if( code == USER_PM )
-			printf( "[%s] %s\n", user.c_str(), msg.c_str() );
-
-		/* Handle commands from external users */
-		if( msg[0] == '!' )
-		{
-			const size_t pos = msg.find_first_of( ' ' );
-			string cmd = msg.substr( 1, pos-1 );
-			StringUtil::ToLower( cmd );
-
-			string param = "";
-
-			if( pos != string::npos && pos+1 < msg.length() )
-				param = msg.substr( pos+1 );
-
-			MeepBot_LuaBindings::Command( L, code, cmd.c_str(), user.c_str(), param.c_str() );
-		}
-		else if( code == ROOM_MESSAGE )
-		{
-			/* if someone said our name, answer back */
-			if( msg.length() == 7 || (msg.length() == 8 && ispunct(msg[7])) )
-			{
-				string name = msg.substr(0, 7);
-				StringUtil::ToLower( name );
-
-				if( name == "meepbot" )
-					Say( "Yes, my Love?" );
-				else if( name == "m33pb07" )
-					Say( "y35, my l0v3?" );
-			}
-		}
+		MeepBot_LuaBindings::Respond( L, code, user.c_str(), msg.c_str() );
 		break;
 
 	case WALL_MESSAGE:
