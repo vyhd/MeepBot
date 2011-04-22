@@ -177,8 +177,6 @@ void MeepBot::MainLoop()
 			break;
 		}
 
-		m_sReadBuffer[len] = '\0';
-
 		if( PacketUtil::NeedsSplit(m_sReadBuffer) )
 		{
 			vector<string> packets;
@@ -349,6 +347,8 @@ int MeepBot::Read()
 		printf( "read error: %s\n", strerror(errno) );
 		m_bLoggedIn = false;
 	}
+
+	m_sReadBuffer[ret] = '\0';
 
 	return ret;
 }
