@@ -21,6 +21,11 @@ void UserList::Remove( const string &name )
 	m_List.erase( name );
 }
 
+int UserList::GetNumUsers() const
+{
+	return m_List.size();
+}
+
 set<string>::iterator UserList::FindMatch( const string &pattern, cmpfunc func )
 {
 	set<string>::iterator it;

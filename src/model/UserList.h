@@ -15,6 +15,8 @@ public:
 	void Add( const std::string &name );
 	void Remove( const std::string &name );
 
+	int GetNumUsers() const;
+
 	const std::string Resolve( const std::string &caller, const std::string &pattern );
 
 	void PrintList() const;
