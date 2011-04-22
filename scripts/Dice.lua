@@ -4,6 +4,7 @@ MeepBot.Help["rollx"] = "rolls one die with up to 4294967295 sides, if you reall
 local DEFAULT_NUM_SIDES = 6
 local MAX_ROLLS = 20
 local MAX_SIDES = 1000
+local MAX_ROLLX_SIDES = math.pow(2,32) - 1
 
 local function DoRoll( sides )
 	return MeepBot.Utils.Rand( sides )
@@ -25,17 +26,23 @@ MeepBot.Commands["roll"] = function( type, caller, params )
 	if not HasAccess(caller, LEVEL_OP) then return end
 
 	-- throwaway, number of dice, number of sides per die
-	local _, num, sides
+	local _, num, sides = nil, 1, DEFAULT_NUM_SIDES
 
 	if params then
-
 		_, _, num, sides = params:find( "^(%d+)d?(%d*)" )
 		num = tonumber(num)
 		sides = tonumber(sides)
 	end
 
-	if not num or num == 0 then num = 1 end
-	if not sides or sides == 0 then sides = DEFAULT_NUM_SIDES end
+	if not num or num == 0 then
+		MeepBot.SayOrPM( type, caller, "I need at least one die.")
+		return
+	end
+
+	if not sides or sides == 0 then
+		MeepBot.SayOrPM( type, caller, "I need at least one side!" )
+		return
+	end
 
 	if num < 0 or num > MAX_ROLLS then
 		local str = ("Must be between 1 and %d rolls."):format(MAX_ROLLS)
@@ -82,6 +89,9 @@ MeepBot.Commands["rollx"] = function( type, caller, params )
 
 	if not sides or sides == 0 then
 		MeepBot.SayOrPM( type, caller, "I need a non-zero integer. 8)" )
+		return
+	elseif sides > MAX_ROLLX_SIDES then
+		MeepBot.SayOrPM( type, caller, ("Sides is limited to %d."):format(MAX_ROLLX_SIDES) )
 		return
 	end
 
