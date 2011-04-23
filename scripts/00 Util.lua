@@ -11,10 +11,21 @@
 MeepBot.IsEnabled = true
 
 --
+-- Declare some tables that are implemented in Lua and used everywhere.
+--
+
+MeepBot.AccessLevel = { }
+MeepBot.Help = { }
+
+-- alias for Lua's type() function so we can use it if needed
+-- without interfering with the 'type, caller, params' declarations
+gettype = type
+
+--
 -- Respond - Lua entry point for lines that the bot sees. We dispatch all
 -- commands from here and, if we're e.g. playing a game, this is where we
 -- redirect input. 'type' is one of TYPE_CHAT, TYPE_PM, or TYPE_MOD_CHAT;
--- 'user' is who sent 'line'.
+-- 'caller' is who sent 'line'.
 --
 
 -- splits a command into its name and param string
@@ -23,15 +34,49 @@ local function SplitCommand( line )
 	return cmd, params
 end
 
-function MeepBot.Respond( type, user, line )
+function MeepBot.Respond( type, caller, line )
 	-- ignore empty strings and commands coming from us
-	if not line or user == "MeepBot" then return end
+	if not line or caller == "MeepBot" then return end
 
 	-- command dispatch (prefixed with '!')
 	if line:sub(1,1) == "!" then
 		local cmd, params = SplitCommand(line)
-		local response = "cmd: " .. tostring(cmd) .. ", params: " .. tostring(params)
-		MeepBot.SayOrPM( type, user, response )
+		cmd = cmd:lower()
+
+		if gettype(param) == "string" and param:len() == 0 then
+			param = nil
+		end
+
+		local command = MeepBot.Commands[cmd]
+		local level = MeepBot.AccessLevel[cmd]
+
+		if not command then return end
+
+		-- don't silently ignore missing perms; acknowledge them
+		if not level then
+			MeepBot.SayOrPM( type, caller, cmd .. " lacks an access level!" )
+			return
+		end
+
+		if HasAccess( caller, level ) then
+			MeepBot.Commands[cmd]( type, caller, params )
+		end
+	end
+
+	-- easter egg; respond to users who say our name (todo)
+end
+
+--
+-- Register - registers a command given its access level, help text, and
+-- optionally the function that implements it.
+--
+
+function Register( cmd, level, help, func )
+	MeepBot.AccessLevel[cmd] = level
+	MeepBot.Help[cmd] = help
+
+	if not MeepBot.Commands[cmd] and func then
+		MeepBot.Commands[cmd] = func
 	end
 end
 
@@ -40,13 +85,17 @@ end
 -- either the bot is enabled, or the caller is at least a moderator.
 -- Preface every command function with this or you will probably suffer.
 --
+
+-- convenience alias
+GetAccessLevel = MeepBot.Users.GetAccessLevel
+
 function HasAccess( user, level )
 	if gettype(level) ~= "number" then
 		print( "Unknown level " .. tostring(level) )
 		return false
 	end
 
-	local ulevel = MeepBot.Users.GetAccessLevel( user )
+	local ulevel = GetAccessLevel( user )
 
 	-- unless this user is a mod, don't allow when the bot's disabled
 	if ulevel < LEVEL_MOD and not MeepBot.IsEnabled then return false end
@@ -54,23 +103,8 @@ function HasAccess( user, level )
 	return ulevel >= level
 end
 
---
--- Create the help table that contains help information for all commands.
---
-MeepBot.Help =
-{
-	Fun = { },
-	Ops = { },
-	Mods = { },
-	Admins = { }
-}
-
 -- easter egg, because why not
 MeepBot.Help["me"] = "you're beyond my help, I'm afraid"
-
--- alias for Lua's type() function so we can use it if needed
--- without interfering with the 'type, caller, params' declarations
-gettype = type
 
 --
 -- Publicly says or responds via PM, depending on 'type'

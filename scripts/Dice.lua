@@ -1,5 +1,5 @@
-MeepBot.Help["roll"] = "rolls one or more dice with the given number of sides, e.g. '2d8' rolls two 8-sided dice. (Ops)"
-MeepBot.Help["rollx"] = "rolls one die with up to 4294967295 sides, if you really need that sort of thing. (Ops)"
+Register( "roll", LEVEL_OP, "rolls one or more dice with the given number of sides, e.g. '2d8' rolls two 8-sided dice." )
+Register( "rollx", LEVEL_OP, "rolls one die with up to 4294967295 sides, if you really need that sort of thing." )
 
 local DEFAULT_NUM_SIDES = 6
 local MAX_ROLLS = 20
@@ -23,8 +23,6 @@ local function RollsToStr( rolls )
 end
 
 MeepBot.Commands["roll"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_OP) then return end
-
 	-- throwaway, number of dice, number of sides per die
 	local _, num, sides = nil, 1, DEFAULT_NUM_SIDES
 
@@ -73,10 +71,6 @@ MeepBot.Commands["roll"] = function( type, caller, params )
 end
 
 MeepBot.Commands["rollx"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_OP) then return end
-
-	print( ("rollx %s (caller: %s, type: %d)"):format(params,caller,type) )
-
 	if not params then
 		MeepBot.SayOrPM( type, caller, "Usage: !rollx [number]." )
 		return

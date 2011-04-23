@@ -1,16 +1,14 @@
+Register( "protect", LEVEL_ADMIN, "prevents moderators from changing a user's rank." )
+Register( "unprotect", LEVEL_ADMIN, "unprotects a user's rank, allowing mods to change it." )
+Register( "setmask", LEVEL_ADMIN, "masks a user's rank with the given string." )
+
 --[[
 MeepBot.Commands["set"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_ADMIN) then return end
-
 	-- TODO: get everything but the last word and resolve
 end
 --]]
 
-MeepBot.Help["protect"] = "prevents moderators from changing a user's rank. (Admins)"
-
 MeepBot.Commands["protect"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_ADMIN) then return end
-
 	if not params then
 		MeepBot.SayOrPM( type, caller, "Usage: !protect [username]" )
 		return
@@ -28,11 +26,7 @@ MeepBot.Commands["protect"] = function( type, caller, params )
 	MeepBot.SayOrPM( type, caller, response )
 end
 
-MeepBot.Help["unprotect"] = "unprotects a user's rank, so moderators can change it. (Admins)"
-
 MeepBot.Commands["unprotect"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_ADMIN) then return end
-
 	if not params then
 		MeepBot.SayOrPM( type, caller, "Usage: !unProtect [username]" )
 		return
@@ -51,10 +45,10 @@ MeepBot.Commands["unprotect"] = function( type, caller, params )
 end
 
 MeepBot.Commands["setmask"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_ADMIN) then return end
-
 	if not params then
 		MeepBot.SayOrPM( type, caller, "Usage: !setMask [user] [mask]" )
 		return
 	end
+
+	MeepBot.SayOrPM( type, caller, "Not implemented yet, check back later" )
 end

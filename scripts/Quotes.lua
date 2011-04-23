@@ -1,10 +1,8 @@
-MeepBot.Help["quote"] = "displays a quote from the database. If no ID or pattern is given, a random quote is displayed."
-MeepBot.Help["addquote"] = "adds a quote to the quotes database. (Ops)"
-MeepBot.Help["removequote"] = "removes a quote from the database by its ID. (Mods)"
+Register( "quote", LEVEL_USER, "displays a quote. If no ID/pattern is given, a random quote is selected." )
+Register( "addquote", LEVEL_OP, "adds a quote to the quotes database." )
+Register( "removequote", LEVEL_MOD, "removes a quote from the database by ID." )
 
 MeepBot.Commands["addquote"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_MOD) then return end
-
 	local response = "Oh noes! Quote not added! :("
 
 	-- TODO: give the ID of the quote number.
@@ -16,8 +14,6 @@ MeepBot.Commands["addquote"] = function( type, caller, params )
 end
 
 MeepBot.Commands["removequote"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_MOD) then return end
-
 	local _, id = nil, nil
 
 	if gettype(params) == "string" then
@@ -49,8 +45,8 @@ MeepBot.Commands["removequote"] = function( type, caller, params )
 end
 	
 MeepBot.Commands["quote"] = function( type, caller, params )
-	-- if we don't have access, only respond via PM
-	if not HasAccess(caller, LEVEL_OP) and type ~= TYPE_PM then return end
+	-- if we're not an operator, only respond through PM
+	if GetAccessLevel(caller) == LEVEL_USER and type ~= TYPE_PM then return end
 
 	local paramtype = gettype(params)
 	local _, id, id_to_try, response

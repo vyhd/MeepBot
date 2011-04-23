@@ -1,4 +1,4 @@
-MeepBot.Help["position"] = "displays the access level of a user. (Ops)"
+Register( "position", LEVEL_USER, "displays the access level of a user." )
 
 local LevelToName =
 {
@@ -11,7 +11,7 @@ local LevelToName =
 
 MeepBot.Commands["position"] = function( type, caller, params )
 	-- if we don't have access, only respond via PM
-	if not HasAccess(caller, LEVEL_OP) and type ~= TYPE_PM then return end
+	if GetAccessLevel(caller) == LEVEL_USER and type ~= TYPE_PM then return end
 
 	-- if we have no params, set the params to 'me' and resolve it
 	if not params then params = "me" end

@@ -1,11 +1,13 @@
 -- if this number is reached, the user is demoted and locked
 local MAX_WARNINGS = 3
 
-MeepBot.Help["warn"] = "gives a user a warning. At " .. MAX_WARNINGS .. " warnings, the user loses bot privileges. (Mods)"
+local help_text = "gives a user a warning. At " .. MAX_WARNINGS .. " warnings, the user loses bot privileges."
+Register( "warn", LEVEL_MOD, help_text )
+
+Register( "unwarn", LEVEL_ADMIN, "removes all warnings from a user." )
+Register( "checkwarnings", LEVEL_USER, "checks how many warnings you have or a user has." )
 
 MeepBot.Commands["warn"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_MOD) then return end
-
 	if not params then
 		MeepBot.SayOrPM( type, caller, "Usage: !warn [username]" )
 		return
@@ -51,11 +53,7 @@ MeepBot.Commands["warn"] = function( type, caller, params )
 	MeepBot.SayOrPM( type, caller, response )
 end
 
-MeepBot.Help["unwarn"] = "removes all warnings from a user. (Admins)"
-
 MeepBot.Commands["unwarn"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_ADMIN) then return end
-
 	if not params then
 		MeepBot.SayOrPM( type, caller, "Usage: !unwarn [username]" )
 		return
@@ -76,12 +74,10 @@ MeepBot.Commands["unwarn"] = function( type, caller, params )
 	MeepBot.SayOrPM( type, caller, response )
 end
 
-MeepBot.Help["checkwarnings"] = "checks how many warnings a user has. If you're not a mod, you can use it to check your own."
-
 MeepBot.Commands["checkwarnings"] = function( type, caller, params )
 
 	-- if we're not a moderator, only check our own warnings via PM
-	if not HasAccess(caller, LEVEL_MOD) then
+	if GetAccessLevel(caller) < LEVEL_MOD then
 		type = TYPE_PM
 		params = "me"
 	 end

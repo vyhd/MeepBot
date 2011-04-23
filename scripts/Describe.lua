@@ -1,8 +1,8 @@
-MeepBot.Help["describe"] = "displays a user's personal description. (Ops)"
+Register( "describe", LEVEL_OP, "displays a user's personal description." )
+Register( "setdesc", LEVEL_OP, "sets your personal description." )
+Register( "admindesc", LEVEL_ADMIN, "overrides a user's personal description." )
 
 MeepBot.Commands["describe"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_OP) then return end
-
 	local target = MeepBot.Utils.Resolve( caller, params )
 	local entry = MeepBot.Users.GetUserEntry( target )
 	local desc = entry.desc
@@ -23,11 +23,7 @@ end
 -- maximum allowed description length
 local MAX_DESC_LEN = 64
 
-MeepBot.Help["setdesc"] = "sets your personal description. (Ops)"
-
 MeepBot.Commands["setdesc"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_OP) then return end
-
 	local response = "Usage: !setDesc [description]"
 
 	if gettype(params) ~= "string" then
@@ -47,9 +43,6 @@ MeepBot.Commands["setdesc"] = function( type, caller, params )
 	MeepBot.SayOrPM( type, caller, response )
 end
 
-MeepBot.Help["admindesc"] = "allows an admin to override a user's description. (Admins)"
-
 MeepBot.Commands["admindesc"] = function( type, caller, params )
-	if not HasAccess(caller, LEVEL_ADMIN) then return end
-
+	MeepBot.SayOrPM( type, caller, "Sorry, not implemented yet." )
 end

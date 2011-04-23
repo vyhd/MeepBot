@@ -1,4 +1,4 @@
-MeepBot.Help["8ball"] = "Ask a question, get an answer. (Ops)"
+Register( "8ball", LEVEL_OP, "Ask a question, get an answer" )
 
 local answers =
 {
@@ -31,10 +31,7 @@ local answers =
 
 
 MeepBot.Commands["8ball"] = function( type, caller, params )
-
-	-- if we don't have access, only respond via PM
-	if not HasAccess(caller, LEVEL_OP) and type ~= TYPE_PM then return end
-
+	-- see if we were actually asked a question
 	if not params or params:sub(-1, -1) ~= "?" then
 		MeepBot.SayOrPM( type, caller, "I need a question." )
 		return

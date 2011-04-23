@@ -1,4 +1,4 @@
-MeepBot.Help["fling"] = "flings a random object at username. (Ops)"
+Register( "fling", LEVEL_OP, "flings a random object at username." )
 
 local objects =
 {
@@ -48,8 +48,8 @@ local objects =
 }
 
 MeepBot.Commands["fling"] = function( type, caller, params )
-	-- only take commands in the public chat
-	if not HasAccess(caller, LEVEL_OP) or type ~= TYPE_CHAT then return end
+	-- only take public invocations
+	if not type ~= TYPE_CHAT then return end
 
 	local idx = MeepBot.Utils.Rand( #objects )
 	local target = MeepBot.Utils.Resolve( caller, params )

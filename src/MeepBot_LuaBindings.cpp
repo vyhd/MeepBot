@@ -466,7 +466,7 @@ bool MeepBot_LuaBindings::Respond( lua_State *L, int type, const char *user, con
 	if( L == NULL )
 	{
 		/* Don't respond to ourself; that'll cause a feedback loop. */
-		if( strcmp(user, "MeepBot") != 0 )
+		if( strncmp(line, "!", 1) == 0 && strcmp(user, "MeepBot") != 0 )
 			BOT->Say( "The Lua broke :( Please fix it and !reload" );
 
 		return false;
